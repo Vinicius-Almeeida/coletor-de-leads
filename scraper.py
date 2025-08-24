@@ -24,19 +24,16 @@ def enrich_data_with_scraping(business_data: Dict[str, str]) -> Dict[str, str]:
     Returns:
         Dict[str, str]: Dicionário enriquecido com campos adicionais:
             - email: E-mail encontrado no site
-            - linkedin: URL do LinkedIn da empresa
-            - facebook: URL do Facebook da empresa
+            - linkedin: LinkedIn encontrado no site
+            - facebook: Facebook encontrado no site
+            - whatsapp: WhatsApp encontrado no site
     """
     
-    # Verificar se há site para fazer scraping
-    site_url = business_data.get('site', '').strip()
-    if not site_url:
+    site_url = business_data.get('site', '')
+    
+    if not site_url or not validate_url(site_url):
         print(f"⚠️ {business_data.get('nome', 'Empresa')}: Sem site disponível")
         return _add_empty_fields(business_data)
-    
-    # Normalizar URL
-    if not site_url.startswith(('http://', 'https://')):
-        site_url = 'https://' + site_url
     
     print(f"🔍 Fazendo scraping do site: {site_url}")
     
@@ -140,51 +137,32 @@ def _extract_email(soup: BeautifulSoup, base_url: str) -> str:
     page_text = soup.get_text()
     email_matches = re.findall(email_pattern, page_text)
     
-    # Filtrar e-mails válidos (excluir e-mails genéricos)
-    valid_emails = []
-    for email in email_matches:
-        email_lower = email.lower()
-        # Excluir e-mails genéricos ou de teste
-        if not any(excluded in email_lower for excluded in ['example.com', 'test.com', 'noreply', 'no-reply']):
-            valid_emails.append(email)
+    if email_matches:
+        return email_matches[0]
     
-    return valid_emails[0] if valid_emails else ""
+    return ""
 
 
 def _extract_linkedin(soup: BeautifulSoup, base_url: str) -> str:
     """
-    Extrai URL do LinkedIn da empresa.
+    Extrai LinkedIn da empresa.
     
     Args:
         soup (BeautifulSoup): Objeto BeautifulSoup com o HTML parseado
         base_url (str): URL base do site
     
     Returns:
-        str: URL do LinkedIn encontrada ou string vazia
+        str: LinkedIn encontrado ou string vazia
     """
     
-    # Buscar links que contenham linkedin.com/company/
-    linkedin_links = soup.find_all('a', href=re.compile(r'linkedin\.com/company/', re.IGNORECASE))
-    
+    # Buscar em links
+    linkedin_links = soup.find_all('a', href=True)
     for link in linkedin_links:
-        href = link.get('href', '')
-        if 'linkedin.com/company/' in href.lower():
-            # Normalizar URL
-            if href.startswith('/'):
-                return urljoin(base_url, href)
-            elif href.startswith('http'):
-                return href
-            else:
-                return urljoin(base_url, href)
-    
-    # Buscar em qualquer link que contenha linkedin
-    all_links = soup.find_all('a', href=True)
-    for link in all_links:
         href = link.get('href', '').lower()
-        if 'linkedin.com' in href and 'company' in href:
-            if href.startswith('/'):
-                return urljoin(base_url, href)
-            elif href.startswith('http'):
+        
+        # Verificar se é um link do LinkedIn
+        if 'linkedin.com/company/' in href or 'linkedin.com/in/' in href:
+            if href.startswith('http'):
                 return href
             else:
                 return urljoin(base_url, href)
@@ -194,26 +172,24 @@ def _extract_linkedin(soup: BeautifulSoup, base_url: str) -> str:
 
 def _extract_facebook(soup: BeautifulSoup, base_url: str) -> str:
     """
-    Extrai URL do Facebook da empresa.
+    Extrai Facebook da empresa.
     
     Args:
         soup (BeautifulSoup): Objeto BeautifulSoup com o HTML parseado
         base_url (str): URL base do site
     
     Returns:
-        str: URL do Facebook encontrada ou string vazia
+        str: Facebook encontrado ou string vazia
     """
     
-    # Buscar links que contenham facebook.com
-    facebook_links = soup.find_all('a', href=re.compile(r'facebook\.com', re.IGNORECASE))
-    
+    # Buscar em links
+    facebook_links = soup.find_all('a', href=True)
     for link in facebook_links:
-        href = link.get('href', '')
-        if 'facebook.com' in href.lower():
-            # Normalizar URL
-            if href.startswith('/'):
-                return urljoin(base_url, href)
-            elif href.startswith('http'):
+        href = link.get('href', '').lower()
+        
+        # Verificar se é um link do Facebook
+        if 'facebook.com/' in href:
+            if href.startswith('http'):
                 return href
             else:
                 return urljoin(base_url, href)
@@ -326,7 +302,7 @@ def validate_url(url: str) -> bool:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except Exception:
-       return False
+        return False
 
 
 if __name__ == "__main__":
@@ -353,6 +329,7 @@ if __name__ == "__main__":
         print(f"E-mail: {enriched_data['email']}")
         print(f"LinkedIn: {enriched_data['linkedin']}")
         print(f"Facebook: {enriched_data['facebook']}")
+        print(f"WhatsApp: {enriched_data['whatsapp']}")
         
     except Exception as e:
         print(f"❌ Erro no teste: {e}")
