@@ -1,0 +1,3 @@
+# Configurações da API Google Places
+# Substitua pela sua chave real da Google Places API
+GOOGLE_PLACES_API_KEY=sua_chave_da_api_aqui
