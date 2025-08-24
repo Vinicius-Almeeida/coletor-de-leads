@@ -1,10 +1,12 @@
 # 🚀 Coletor Híbrido de Leads
 
-Sistema inteligente de coleta de leads empresariais usando Google Places API + Web Scraping ético.
+Sistema inteligente de coleta de leads empresariais usando Google Places API +
+Web Scraping ético.
 
 ## 🔒 Configuração Segura da API
 
 ### 1. Instalar dependências
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -14,6 +16,7 @@ pip install -r requirements.txt
 **IMPORTANTE:** A chave da API NÃO será enviada para o GitHub por segurança!
 
 1. Crie um arquivo `.env` na raiz do projeto:
+
 ```bash
 # Windows
 echo GOOGLE_PLACES_API_KEY=sua_chave_aqui > .env
@@ -38,12 +41,15 @@ echo "GOOGLE_PLACES_API_KEY=sua_chave_aqui" > .env
 ## 🚀 Como usar
 
 ### Interface Web (Recomendado)
+
 ```bash
 python app_web.py
 ```
+
 Acesse: http://localhost:5000
 
 ### Interface CLI
+
 ```bash
 python main.py
 ```
@@ -92,4 +98,5 @@ Este projeto é para uso educacional e comercial legítimo.
 
 ---
 
-**⚠️ IMPORTANTE:** Nunca compartilhe sua chave da API ou envie o arquivo `.env` para o GitHub!
+**⚠️ IMPORTANTE:** Nunca compartilhe sua chave da API ou envie o arquivo `.env`
+para o GitHub!

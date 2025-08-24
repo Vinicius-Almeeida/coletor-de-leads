@@ -103,7 +103,7 @@ def stop_search():
 
 @app.route('/api/download')
 def download_results():
-    """Download dos resultados em CSV"""
+    """Download dos resultados em Excel"""
     if not search_status['results']:
         return jsonify({'error': 'Nenhum resultado disponível'}), 404
     
@@ -112,10 +112,10 @@ def download_results():
     
     # Nome do arquivo
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"leads_{timestamp}.csv"
+    filename = f"leads_{timestamp}.xlsx"
     
-    # Salvar CSV
-    df.to_csv(filename, index=False, encoding='utf-8-sig')
+    # Salvar Excel
+    df.to_excel(filename, index=False, engine='openpyxl')
     
     return send_file(filename, as_attachment=True, download_name=filename)
 
@@ -145,6 +145,43 @@ def get_whatsapp_leads():
         'total_whatsapp_leads': len(whatsapp_leads),
         'leads': whatsapp_leads
     })
+
+@app.route('/api/download-whatsapp-leads')
+def download_whatsapp_leads():
+    """Download dos leads com WhatsApp em Excel"""
+    global all_searches
+    
+    whatsapp_leads = []
+    
+    for segment in all_searches['segments'].values():
+        for company in segment['companies']:
+            if company.get('whatsapp') and company['whatsapp'].strip():
+                whatsapp_leads.append({
+                    'Empresa': company.get('nome', ''),
+                    'Segmento': f"{segment['nicho']} - {segment['cidade']}",
+                    'WhatsApp': company['whatsapp'],
+                    'Telefone': company.get('telefone', ''),
+                    'Email': company.get('email', ''),
+                    'Website': company.get('site', ''),
+                    'Endereço': company.get('endereco', ''),
+                    'LinkedIn': company.get('linkedin', ''),
+                    'Facebook': company.get('facebook', '')
+                })
+    
+    if not whatsapp_leads:
+        return jsonify({'error': 'Nenhum lead com WhatsApp encontrado'}), 404
+    
+    # Criar DataFrame
+    df = pd.DataFrame(whatsapp_leads)
+    
+    # Nome do arquivo
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"whatsapp_leads_{timestamp}.xlsx"
+    
+    # Salvar Excel
+    df.to_excel(filename, index=False, engine='openpyxl')
+    
+    return send_file(filename, as_attachment=True, download_name=filename)
 
 def search_process(nicho: str, cidade: str):
     """Processo de busca em background"""
@@ -553,7 +590,7 @@ html_template = """
             <div class="results-panel" id="resultsPanel">
                 <h3>📋 Resultados da Busca</h3>
                 <div id="resultsList"></div>
-                <button class="btn btn-success" id="downloadBtn">📥 Download CSV</button>
+                                 <button class="btn btn-success" id="downloadBtn">📥 Download Excel</button>
             </div>
         </div>
     </div>
@@ -715,3 +752,6 @@ if __name__ == '__main__':
     print("📱 Acesse: http://localhost:5000")
     print("💡 Use Ctrl+C para parar o servidor")
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+# Para Vercel
+app.debug = False

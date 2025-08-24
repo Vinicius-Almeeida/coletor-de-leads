@@ -326,7 +326,7 @@ def validate_url(url: str) -> bool:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except Exception:
-        return False
+       return False
 
 
 if __name__ == "__main__":

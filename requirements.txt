@@ -1,15 +1,9 @@
-# Dependências do Coletor Híbrido de Leads
+flask>=2.3.0
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 pandas>=2.0.0
 lxml>=4.9.0
 urllib3>=2.0.0
-
-# Dependências opcionais para melhor performance
 html5lib>=1.1
-
-# Dependências para interface web
-flask>=2.3.0
-
-# Dependências para configuração segura
 python-dotenv>=1.0.0
+openpyxl>=3.1.0
