@@ -120,10 +120,19 @@ def stop_search():
     """Para a busca atual"""
     global search_status
     
-    search_status['running'] = False
-    search_status['phase'] = 'Busca interrompida'
+    print("⏹️ Parando busca atual...")
     
-    return jsonify({'message': 'Busca interrompida'})
+    search_status['running'] = False
+    search_status['phase'] = 'Busca interrompida pelo usuário'
+    search_status['progress'] = 0
+    
+    print("✅ Busca interrompida com sucesso")
+    
+    return jsonify({
+        'message': 'Busca interrompida',
+        'status': 'stopped',
+        'phase': search_status['phase']
+    })
 
 @app.route('/api/download', methods=['GET'])
 def download_results():
@@ -264,11 +273,16 @@ def real_search(nicho, cidade):
         # Enriquecer dados com scraping
         enriched_results = []
         for i, business in enumerate(businesses):
+            # Verificar se a busca foi interrompida
             if not search_status['running']:
+                print("⏹️ Busca interrompida durante o scraping")
+                search_status['phase'] = 'Busca interrompida pelo usuário'
                 break
             
-            search_status['current_item'] = business.get('name', 'Empresa')
+            search_status['current_item'] = business.get('nome', 'Empresa')
             search_status['progress'] = 30 + (i / len(businesses)) * 60
+            
+            print(f"🔍 Processando {i+1}/{len(businesses)}: {business.get('nome', 'Empresa')}")
             
             # Enriquecer com scraping
             enriched_business = enrich_data_with_scraping(business)

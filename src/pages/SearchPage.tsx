@@ -72,12 +72,12 @@ const SearchPage: React.FC = () => {
     try {
       console.log("🚀 Iniciando busca para:", { nicho, cidade });
       console.log("📡 URL da API:", API_ENDPOINTS.SEARCH);
-      
+
       const response = await fetch(API_ENDPOINTS.SEARCH, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify({ nicho, cidade }),
       });
@@ -97,7 +97,11 @@ const SearchPage: React.FC = () => {
       }
     } catch (error) {
       console.error("❌ Erro de rede:", error);
-      alert(`Erro de conexão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      alert(
+        `Erro de conexão: ${
+          error instanceof Error ? error.message : "Erro desconhecido"
+        }`
+      );
     } finally {
       // Se houver erro, parar o estado de busca
       if (!searchStatus.running) {
@@ -107,13 +111,50 @@ const SearchPage: React.FC = () => {
   };
 
   const stopSearch = async () => {
+    // Confirmação antes de parar
+    if (!window.confirm("Tem certeza que deseja parar a busca atual?")) {
+      return;
+    }
+    
     try {
-      await fetch(API_ENDPOINTS.STOP, {
+      console.log("⏹️ Parando busca...");
+      
+      const response = await fetch(API_ENDPOINTS.STOP, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
       });
-      setIsSearching(false);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Busca parada:", data);
+        
+        // Atualizar status local
+        setSearchStatus(prev => ({
+          ...prev,
+          running: false,
+          phase: 'Busca interrompida pelo usuário',
+          progress: 0
+        }));
+        
+        setIsSearching(false);
+        
+        // Salvar status no localStorage
+        localStorage.setItem("searchStatus", JSON.stringify({
+          ...searchStatus,
+          running: false,
+          phase: 'Busca interrompida pelo usuário',
+          progress: 0
+        }));
+      } else {
+        console.error("❌ Erro ao parar busca:", response.status);
+        alert("Erro ao parar busca");
+      }
     } catch (error) {
-      console.error("Erro ao parar busca:", error);
+      console.error("❌ Erro ao parar busca:", error);
+      alert("Erro ao parar busca");
     }
   };
 
@@ -122,15 +163,15 @@ const SearchPage: React.FC = () => {
       try {
         const response = await fetch(API_ENDPOINTS.STATUS, {
           headers: {
-            "Accept": "application/json",
+            Accept: "application/json",
           },
         });
-        
+
         if (!response.ok) {
           console.error("❌ Erro ao buscar status:", response.status);
           return;
         }
-        
+
         const status = await response.json();
         setSearchStatus(status);
 
@@ -191,11 +232,11 @@ const SearchPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
             <button
               onClick={startSearch}
               disabled={isSearching}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
               {isSearching ? "🔍 Buscando..." : "🚀 Iniciar Busca"}
             </button>
@@ -203,7 +244,7 @@ const SearchPage: React.FC = () => {
             {isSearching && (
               <button
                 onClick={stopSearch}
-                className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700"
+                className="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition-colors font-medium shadow-lg"
               >
                 ⏹️ Parar Busca
               </button>
