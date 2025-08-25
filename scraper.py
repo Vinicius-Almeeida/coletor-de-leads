@@ -39,7 +39,7 @@ def enrich_data_with_scraping(business_data: Dict[str, str]) -> Dict[str, str]:
     
     try:
         # Fazer requisição HTTP
-    headers = {
+        headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
@@ -111,30 +111,27 @@ def enrich_data_with_scraping(business_data: Dict[str, str]) -> Dict[str, str]:
 
 def _extract_email(soup: BeautifulSoup, base_url: str) -> str:
     """
-    Extrai e-mail do HTML da página.
+    Extrai e-mail do site.
     
     Args:
-        soup (BeautifulSoup): Objeto BeautifulSoup com o HTML parseado
+        soup (BeautifulSoup): Objeto BeautifulSoup do site
         base_url (str): URL base do site
     
     Returns:
         str: E-mail encontrado ou string vazia
     """
     
-    # Padrão para e-mails
-    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-    
     # Buscar em links mailto:
     mailto_links = soup.find_all('a', href=re.compile(r'^mailto:', re.IGNORECASE))
     for link in mailto_links:
         href = link.get('href', '')
-        if href.startswith('mailto:'):
-            email = href[7:]  # Remove 'mailto:'
-            if re.match(email_pattern, email):
-                return email
+        email = href.replace('mailto:', '').split('?')[0]
+        if '@' in email and '.' in email:
+            return email
     
-    # Buscar em texto da página
+    # Buscar padrões de e-mail no texto
     page_text = soup.get_text()
+    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
     email_matches = re.findall(email_pattern, page_text)
     
     if email_matches:
@@ -145,97 +142,80 @@ def _extract_email(soup: BeautifulSoup, base_url: str) -> str:
 
 def _extract_linkedin(soup: BeautifulSoup, base_url: str) -> str:
     """
-    Extrai LinkedIn da empresa.
+    Extrai link do LinkedIn do site.
     
     Args:
-        soup (BeautifulSoup): Objeto BeautifulSoup com o HTML parseado
+        soup (BeautifulSoup): Objeto BeautifulSoup do site
         base_url (str): URL base do site
     
     Returns:
-        str: LinkedIn encontrado ou string vazia
+        str: Link do LinkedIn encontrado ou string vazia
     """
     
-    # Buscar em links
-    linkedin_links = soup.find_all('a', href=True)
+    # Buscar links do LinkedIn
+    linkedin_links = soup.find_all('a', href=re.compile(r'linkedin\.com/company/', re.IGNORECASE))
     for link in linkedin_links:
-        href = link.get('href', '').lower()
-        
-        # Verificar se é um link do LinkedIn
-        if 'linkedin.com/company/' in href or 'linkedin.com/in/' in href:
-            if href.startswith('http'):
-                return href
-            else:
-                return urljoin(base_url, href)
+        href = link.get('href', '')
+        if href.startswith('http'):
+            return href
+        else:
+            return urljoin(base_url, href)
     
     return ""
 
 
 def _extract_facebook(soup: BeautifulSoup, base_url: str) -> str:
     """
-    Extrai Facebook da empresa.
+    Extrai link do Facebook do site.
     
     Args:
-        soup (BeautifulSoup): Objeto BeautifulSoup com o HTML parseado
+        soup (BeautifulSoup): Objeto BeautifulSoup do site
         base_url (str): URL base do site
     
     Returns:
-        str: Facebook encontrado ou string vazia
+        str: Link do Facebook encontrado ou string vazia
     """
     
-    # Buscar em links
-    facebook_links = soup.find_all('a', href=True)
+    # Buscar links do Facebook
+    facebook_links = soup.find_all('a', href=re.compile(r'facebook\.com/', re.IGNORECASE))
     for link in facebook_links:
-        href = link.get('href', '').lower()
-        
-        # Verificar se é um link do Facebook
-        if 'facebook.com/' in href:
-            if href.startswith('http'):
-                return href
+        href = link.get('href', '')
+        if href.startswith('http'):
+            return href
     else:
-                return urljoin(base_url, href)
+            return urljoin(base_url, href)
     
     return ""
 
 
 def _extract_whatsapp(soup: BeautifulSoup, base_url: str) -> str:
     """
-    Extrai número de WhatsApp da empresa.
+    Extrai número de WhatsApp do site.
     
     Args:
-        soup (BeautifulSoup): Objeto BeautifulSoup com o HTML parseado
+        soup (BeautifulSoup): Objeto BeautifulSoup do site
         base_url (str): URL base do site
     
     Returns:
         str: Número de WhatsApp encontrado ou string vazia
     """
     
-    # Padrões para WhatsApp
-    whatsapp_patterns = [
-        r'https?://(?:www\.)?wa\.me/(\d+)',  # wa.me links
-        r'https?://(?:www\.)?api\.whatsapp\.com/send\?phone=(\d+)',  # api.whatsapp.com links
-        r'whatsapp://send\?phone=(\d+)',  # whatsapp:// protocol
-        r'(\d{10,14})',  # Números de telefone (10-14 dígitos)
-    ]
-    
-    # Buscar em links
-    whatsapp_links = soup.find_all('a', href=True)
+    # Buscar links do WhatsApp
+    whatsapp_links = soup.find_all('a', href=re.compile(r'(wa\.me|api\.whatsapp\.com/send|whatsapp://)', re.IGNORECASE))
     for link in whatsapp_links:
-        href = link.get('href', '').lower()
-        
-        # Verificar se é um link de WhatsApp
-        for pattern in whatsapp_patterns[:3]:  # Apenas padrões de URL
-            match = re.search(pattern, href, re.IGNORECASE)
-            if match:
-                phone_number = match.group(1)
-                # Limpar o número (remover caracteres especiais)
-                clean_number = re.sub(r'[^\d]', '', phone_number)
-                if len(clean_number) >= 10:
-                    return clean_number
-    
-    # Buscar em texto da página
-    page_text = soup.get_text()
+        href = link.get('href', '')
+        # Extrair número do link
+        if 'wa.me/' in href:
+            number = href.split('wa.me/')[1].split('?')[0]
+            if number.isdigit():
+                return number
+        elif 'api.whatsapp.com/send?phone=' in href:
+            number = href.split('phone=')[1].split('&')[0]
+            if number.isdigit():
+                return number
     
     # Buscar números de telefone que possam ser WhatsApp
+    page_text = soup.get_text()
     phone_matches = re.findall(r'(\d{2,3}[-\s]?\d{4,5}[-\s]?\d{4})', page_text)
     
     for phone in phone_matches:
@@ -302,7 +282,7 @@ def validate_url(url: str) -> bool:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except Exception:
-    return False
+        return False
 
 
 if __name__ == "__main__":

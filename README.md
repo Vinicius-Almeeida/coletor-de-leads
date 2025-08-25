@@ -1,102 +1,167 @@
-# 🚀 Coletor Híbrido de Leads
+# 🎯 Coletor de Leads
 
-Sistema inteligente de coleta de leads empresariais usando Google Places API +
-Web Scraping ético.
+Sistema híbrido para coleta de leads empresariais usando Google Places API e web
+scraping ético.
 
-## 🔒 Configuração Segura da API
+## 🚀 Nova Arquitetura
 
-### 1. Instalar dependências
+- **Frontend**: React + TypeScript + Tailwind CSS
+- **Backend**: Python Flask
+- **Deploy**: Vercel (Frontend) + Python Backend
+
+## 📁 Estrutura do Projeto
+
+```
+coletor-de-leads/
+├── src/                    # Frontend React + TypeScript
+│   ├── components/         # Componentes React
+│   ├── pages/             # Páginas da aplicação
+│   ├── App.tsx            # Componente principal
+│   └── index.tsx          # Ponto de entrada
+├── backend/               # Backend Python
+│   ├── app.py             # Servidor Flask
+│   └── requirements.txt   # Dependências Python
+├── package.json           # Dependências Node.js
+├── tailwind.config.js     # Configuração Tailwind
+└── tsconfig.json          # Configuração TypeScript
+```
+
+## 🛠️ Instalação e Configuração
+
+### 1. Frontend (React + TypeScript)
 
 ```bash
+# Instalar dependências
+npm install
+
+# Executar em desenvolvimento
+npm start
+
+# Build para produção
+npm run build
+```
+
+### 2. Backend (Python Flask)
+
+```bash
+# Navegar para o diretório backend
+cd backend
+
+# Criar ambiente virtual
+python -m venv venv
+
+# Ativar ambiente virtual
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# Instalar dependências
 pip install -r requirements.txt
+
+# Executar servidor
+python app.py
 ```
 
-### 2. Configurar chave da API (OBRIGATÓRIO)
-
-**IMPORTANTE:** A chave da API NÃO será enviada para o GitHub por segurança!
-
-1. Crie um arquivo `.env` na raiz do projeto:
-
-```bash
-# Windows
-echo GOOGLE_PLACES_API_KEY=sua_chave_aqui > .env
-
-# Linux/Mac
-touch .env
-echo "GOOGLE_PLACES_API_KEY=sua_chave_aqui" > .env
-```
-
-2. Substitua `sua_chave_aqui` pela sua chave real da Google Places API
-
-### 3. Como obter a chave da API
+### 3. Configuração da API Google Places
 
 1. Acesse [Google Cloud Console](https://console.cloud.google.com/)
-2. Crie um projeto ou selecione um existente
+2. Crie um novo projeto ou selecione um existente
 3. Ative a **Places API (New)**
-4. Crie credenciais (API Key)
-5. Configure restrições de segurança (recomendado)
+4. Crie uma chave de API
+5. Configure as restrições da chave (recomendado)
 
-📖 **Guia completo:** Veja `GUIA_NOVA_PLACES_API.md`
+## 🎨 Funcionalidades
 
-## 🚀 Como usar
+### 📱 Interface Responsiva
 
-### Interface Web (Recomendado)
+- Design moderno com Tailwind CSS
+- Totalmente responsivo para mobile e desktop
+- Navegação intuitiva entre páginas
 
-```bash
-python app_web.py
+### 🔍 Busca de Leads
+
+- Formulário de busca por nicho e cidade
+- Status em tempo real da busca
+- Botão para parar busca em andamento
+- Visualização dos resultados em tabela
+
+### 📊 Dashboard
+
+- Estatísticas gerais das buscas
+- Visão por segmentos
+- Cards informativos com métricas
+
+### 📞 WhatsApp Leads
+
+- Filtro específico para leads com WhatsApp
+- Links diretos para WhatsApp
+- Download em Excel dos leads com WhatsApp
+
+### 📥 Exportação
+
+- Download em formato Excel (.xlsx)
+- Dados organizados e estruturados
+- Nomeação automática com timestamp
+
+## 🚀 Deploy
+
+### Frontend (Vercel)
+
+1. Conecte seu repositório ao Vercel
+2. Configure as variáveis de ambiente
+3. Deploy automático a cada push
+
+### Backend (Python)
+
+- Pode ser deployado em qualquer servidor Python
+- Heroku, Railway, DigitalOcean, etc.
+
+## 🔧 Configuração de Desenvolvimento
+
+### Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+GOOGLE_PLACES_API_KEY=sua_chave_da_api_aqui
 ```
 
-Acesse: http://localhost:5000
+### Proxy para Desenvolvimento
 
-### Interface CLI
+O frontend está configurado para fazer requisições para `http://localhost:5000`
+durante o desenvolvimento.
 
-```bash
-python main.py
-```
+## 📋 Tecnologias Utilizadas
 
-## 📊 Funcionalidades
+### Frontend
 
-- ✅ **Fase 1:** Coleta via Google Places API (dados confiáveis)
-- ✅ **Fase 2:** Scraping ético de sites (dados adicionais)
-- ✅ **Campo WhatsApp:** Extração automática de números
-- ✅ **Dashboard:** Visualização organizada por segmentos
-- ✅ **Filtros:** Busca e filtragem avançada
-- ✅ **Exportação:** Download em CSV
-- ✅ **Tempo real:** Status de progresso
+- **React 18** - Biblioteca JavaScript para interfaces
+- **TypeScript** - Tipagem estática
+- **Tailwind CSS** - Framework CSS utilitário
+- **React Router** - Roteamento da aplicação
 
-## 🔧 Estrutura do Projeto
+### Backend
 
-```
-projeto-mini-scraper-leads/
-├── app_web.py              # Interface web Flask
-├── main.py                 # Interface CLI
-├── api_handler.py          # Integração Google Places API
-├── scraper.py              # Scraping ético de sites
-├── config.py               # Configurações seguras
-├── requirements.txt        # Dependências
-├── .env                    # Chave da API (NÃO enviar para GitHub!)
-├── .gitignore             # Proteção de arquivos sensíveis
-├── templates/              # Templates HTML
-│   ├── index.html
-│   ├── dashboard.html
-│   └── whatsapp_leads.html
-└── README.md
-```
+- **Flask** - Framework web Python
+- **Flask-CORS** - Cross-Origin Resource Sharing
+- **Pandas** - Manipulação de dados
+- **OpenPyXL** - Geração de arquivos Excel
+- **Requests** - Requisições HTTP
+- **BeautifulSoup** - Web scraping
 
-## 🛡️ Segurança
+## 🎯 Próximos Passos
 
-- ✅ Chave da API protegida em `.env`
-- ✅ `.gitignore` configurado
-- ✅ Rate limiting implementado
-- ✅ User-Agent realista
-- ✅ Timeouts configurados
-- ✅ Tratamento de erros robusto
+1. **Integração com Google Places API** - Substituir dados simulados
+2. **Web Scraping Ético** - Implementar scraping dos sites
+3. **Banco de Dados** - Persistência dos dados
+4. **Autenticação** - Sistema de login
+5. **Relatórios Avançados** - Métricas e análises
 
-## 📝 Licença
+## 📞 Suporte
 
-Este projeto é para uso educacional e comercial legítimo.
+Para dúvidas ou problemas, abra uma issue no repositório.
 
 ---
 
-**⚠️ IMPORTANTE:** Nunca compartilhe sua chave da API ou envie o arquivo `.env`
-para o GitHub!
+**Desenvolvido com ❤️ para facilitar a coleta de leads empresariais**
