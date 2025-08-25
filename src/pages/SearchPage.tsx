@@ -15,24 +15,26 @@ interface SearchStatus {
 
 const SearchPage: React.FC = () => {
   const [nicho, setNicho] = useState(() => {
-    return localStorage.getItem('lastNicho') || "";
+    return localStorage.getItem("lastNicho") || "";
   });
   const [cidade, setCidade] = useState(() => {
-    return localStorage.getItem('lastCidade') || "";
+    return localStorage.getItem("lastCidade") || "";
   });
   const [searchStatus, setSearchStatus] = useState<SearchStatus>(() => {
     // Carregar dados salvos do localStorage
-    const saved = localStorage.getItem('searchStatus');
-    return saved ? JSON.parse(saved) : {
-      running: false,
-      phase: "",
-      progress: 0,
-      total: 0,
-      found: 0,
-      current_item: "",
-      elapsed_time: 0,
-      results: [],
-    };
+    const saved = localStorage.getItem("searchStatus");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          running: false,
+          phase: "",
+          progress: 0,
+          total: 0,
+          found: 0,
+          current_item: "",
+          elapsed_time: 0,
+          results: [],
+        };
   });
   const [isSearching, setIsSearching] = useState(false);
 
@@ -42,11 +44,11 @@ const SearchPage: React.FC = () => {
       try {
         const response = await fetch(API_ENDPOINTS.STATUS);
         const status = await response.json();
-        
+
         // Só atualizar se o backend tiver dados mais recentes
         if (status.results && status.results.length > 0) {
           setSearchStatus(status);
-          localStorage.setItem('searchStatus', JSON.stringify(status));
+          localStorage.setItem("searchStatus", JSON.stringify(status));
         }
       } catch (error) {
         console.error("Erro ao carregar dados do backend:", error);
@@ -63,28 +65,44 @@ const SearchPage: React.FC = () => {
     }
 
     // Salvar nicho e cidade no localStorage
-    localStorage.setItem('lastNicho', nicho);
-    localStorage.setItem('lastCidade', cidade);
+    localStorage.setItem("lastNicho", nicho);
+    localStorage.setItem("lastCidade", cidade);
 
     setIsSearching(true);
     try {
+      console.log("🚀 Iniciando busca para:", { nicho, cidade });
+      console.log("📡 URL da API:", API_ENDPOINTS.SEARCH);
+      
       const response = await fetch(API_ENDPOINTS.SEARCH, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         body: JSON.stringify({ nicho, cidade }),
       });
 
+      console.log("📊 Status da resposta:", response.status);
+      console.log("📊 Headers da resposta:", response.headers);
+
       if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Busca iniciada com sucesso:", data);
         // Iniciar polling do status
         pollStatus();
       } else {
-        alert("Erro ao iniciar busca");
+        const errorText = await response.text();
+        console.error("❌ Erro na resposta:", response.status, errorText);
+        alert(`Erro ao iniciar busca: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error("Erro:", error);
-      alert("Erro ao iniciar busca");
+      console.error("❌ Erro de rede:", error);
+      alert(`Erro de conexão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      // Se houver erro, parar o estado de busca
+      if (!searchStatus.running) {
+        setIsSearching(false);
+      }
     }
   };
 
@@ -102,20 +120,31 @@ const SearchPage: React.FC = () => {
   const pollStatus = async () => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.STATUS);
+        const response = await fetch(API_ENDPOINTS.STATUS, {
+          headers: {
+            "Accept": "application/json",
+          },
+        });
+        
+        if (!response.ok) {
+          console.error("❌ Erro ao buscar status:", response.status);
+          return;
+        }
+        
         const status = await response.json();
         setSearchStatus(status);
-        
+
         // Salvar status no localStorage
-        localStorage.setItem('searchStatus', JSON.stringify(status));
+        localStorage.setItem("searchStatus", JSON.stringify(status));
 
         if (!status.running) {
           setIsSearching(false);
           clearInterval(interval);
         }
       } catch (error) {
-        console.error("Erro ao buscar status:", error);
+        console.error("❌ Erro ao buscar status:", error);
         clearInterval(interval);
+        setIsSearching(false);
       }
     }, 1000);
   };

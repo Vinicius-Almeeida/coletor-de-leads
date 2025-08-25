@@ -22,11 +22,13 @@ interface WhatsAppData {
 const WhatsAppLeadsPage: React.FC = () => {
   const [whatsappData, setWhatsappData] = useState<WhatsAppData>(() => {
     // Carregar dados salvos do localStorage
-    const saved = localStorage.getItem('whatsappData');
-    return saved ? JSON.parse(saved) : {
-      total_whatsapp_leads: 0,
-      leads: [],
-    };
+    const saved = localStorage.getItem("whatsappData");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          total_whatsapp_leads: 0,
+          leads: [],
+        };
   });
   const [loading, setLoading] = useState(true);
 
@@ -39,9 +41,9 @@ const WhatsAppLeadsPage: React.FC = () => {
       const response = await fetch(API_ENDPOINTS.WHATSAPP_LEADS);
       const data = await response.json();
       setWhatsappData(data);
-      
+
       // Salvar dados no localStorage
-      localStorage.setItem('whatsappData', JSON.stringify(data));
+      localStorage.setItem("whatsappData", JSON.stringify(data));
     } catch (error) {
       console.error("Erro ao carregar leads com WhatsApp:", error);
     } finally {

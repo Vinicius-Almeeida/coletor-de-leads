@@ -20,7 +20,7 @@ from scraper import enrich_data_with_scraping
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=['*'])  # Em produção, especifique o domínio do frontend
+CORS(app, origins=['*'], methods=['GET', 'POST', 'OPTIONS'], allow_headers=['Content-Type', 'Accept'])
 
 # Configuração da API do Google Places
 GOOGLE_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
@@ -55,6 +55,15 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'message': 'Coletor de Leads funcionando!',
+        'timestamp': datetime.now().isoformat(),
+        'api_key_configured': bool(GOOGLE_API_KEY)
+    })
+
+@app.route('/api/test', methods=['GET'])
+def test_endpoint():
+    """Endpoint de teste simples"""
+    return jsonify({
+        'message': 'Backend funcionando!',
         'timestamp': datetime.now().isoformat()
     })
 
@@ -64,11 +73,15 @@ def start_search():
     global search_status
     
     try:
+        print(f"🔍 Recebida requisição de busca: {request.get_json()}")
         data = request.get_json()
         nicho = data.get('nicho', '')
         cidade = data.get('cidade', '')
         
+        print(f"📋 Nicho: {nicho}, Cidade: {cidade}")
+        
         if not nicho or not cidade:
+            print("❌ Nicho ou cidade não fornecidos")
             return jsonify({'error': 'Nicho e cidade são obrigatórios'}), 400
         
         # Reset status
@@ -84,13 +97,17 @@ def start_search():
             'current_nicho': nicho
         }
         
+        print(f"✅ Status resetado, iniciando thread de busca")
+        
         # Executar busca real
         thread = threading.Thread(target=real_search, args=(nicho, cidade))
         thread.daemon = True
         thread.start()
         
+        print(f"🚀 Thread de busca iniciada")
         return jsonify({'message': 'Busca iniciada', 'status': 'running'})
     except Exception as e:
+        print(f"❌ Erro ao iniciar busca: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/status', methods=['GET'])

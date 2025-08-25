@@ -11,12 +11,14 @@ interface DashboardData {
 const DashboardPage: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData>(() => {
     // Carregar dados salvos do localStorage
-    const saved = localStorage.getItem('dashboardData');
-    return saved ? JSON.parse(saved) : {
-      searches: [],
-      total_leads: 0,
-      segments: {},
-    };
+    const saved = localStorage.getItem("dashboardData");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          searches: [],
+          total_leads: 0,
+          segments: {},
+        };
   });
   const [loading, setLoading] = useState(true);
 
@@ -35,9 +37,12 @@ const DashboardPage: React.FC = () => {
         segments: data.segments || {},
       };
       setDashboardData(dashboardDataToSave);
-      
+
       // Salvar dados no localStorage
-      localStorage.setItem('dashboardData', JSON.stringify(dashboardDataToSave));
+      localStorage.setItem(
+        "dashboardData",
+        JSON.stringify(dashboardDataToSave)
+      );
     } catch (error) {
       console.error("Erro ao carregar dados do dashboard:", error);
       // Em caso de erro, usar dados padrão
