@@ -54,9 +54,10 @@ Thumbs.db
 leads_*.csv
 whatsapp_leads_*.csv
 
-# Arquivos JSON (exceto vercel.json)
+# Arquivos JSON (exceto vercel.json e netlify.toml)
 *.json
 !vercel.json
+!netlify.toml
 
 # Arquivos de configuração local
 config_local.py
