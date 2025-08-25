@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Navigation from "../components/Navigation";
+import { API_ENDPOINTS } from "../config";
 
 interface SearchStatus {
   running: boolean;
@@ -35,7 +36,7 @@ const SearchPage: React.FC = () => {
 
     setIsSearching(true);
     try {
-      const response = await fetch("/api/search", {
+      const response = await fetch(API_ENDPOINTS.SEARCH, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,7 +58,7 @@ const SearchPage: React.FC = () => {
 
   const stopSearch = async () => {
     try {
-      await fetch("/api/stop", {
+      await fetch(API_ENDPOINTS.STOP, {
         method: "POST",
       });
       setIsSearching(false);
@@ -69,7 +70,7 @@ const SearchPage: React.FC = () => {
   const pollStatus = async () => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch("/api/status");
+        const response = await fetch(API_ENDPOINTS.STATUS);
         const status = await response.json();
         setSearchStatus(status);
 

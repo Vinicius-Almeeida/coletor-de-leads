@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navigation from "../components/Navigation";
+import { API_ENDPOINTS } from "../config";
 
 interface DashboardData {
   searches: any[];
@@ -21,7 +22,7 @@ const DashboardPage: React.FC = () => {
 
   const loadDashboardData = async () => {
     try {
-      const response = await fetch("/api/dashboard-data");
+      const response = await fetch(API_ENDPOINTS.DASHBOARD);
       const data = await response.json();
       // Garantir que os dados tenham a estrutura correta
       setDashboardData({

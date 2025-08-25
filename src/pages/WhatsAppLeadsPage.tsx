@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navigation from "../components/Navigation";
+import { API_ENDPOINTS } from "../config";
 
 interface WhatsAppLead {
   segmento: string;
@@ -31,7 +32,7 @@ const WhatsAppLeadsPage: React.FC = () => {
 
   const loadWhatsAppLeads = async () => {
     try {
-      const response = await fetch("/api/whatsapp-leads");
+      const response = await fetch(API_ENDPOINTS.WHATSAPP_LEADS);
       const data = await response.json();
       setWhatsappData(data);
     } catch (error) {
@@ -42,7 +43,7 @@ const WhatsAppLeadsPage: React.FC = () => {
   };
 
   const downloadWhatsAppLeads = () => {
-    window.location.href = "/api/download-whatsapp-leads";
+    window.location.href = API_ENDPOINTS.DOWNLOAD_WHATSAPP;
   };
 
   if (loading) {

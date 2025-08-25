@@ -20,7 +20,7 @@ from scraper import enrich_data_with_scraping
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=['*'])  # Em produção, especifique o domínio do frontend
 
 # Configuração da API do Google Places
 GOOGLE_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
@@ -355,5 +355,6 @@ def update_global_statistics(nicho, results):
 
 if __name__ == '__main__':
     print("🚀 Iniciando servidor backend...")
-    print("📱 Backend rodando em: http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    print(f"📱 Backend rodando em: http://localhost:{port}")
+    app.run(debug=False, host='0.0.0.0', port=port)
