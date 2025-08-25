@@ -51,9 +51,12 @@ Thumbs.db
 # Arquivos de dados gerados
 *.csv
 *.xlsx
-*.json
 leads_*.csv
 whatsapp_leads_*.csv
+
+# Arquivos JSON (exceto vercel.json)
+*.json
+!vercel.json
 
 # Arquivos de configuração local
 config_local.py

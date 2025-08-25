@@ -103,7 +103,7 @@ def enrich_data_with_scraping(business_data: Dict[str, str]) -> Dict[str, str]:
     except requests.exceptions.HTTPError as e:
         print(f"❌ {business_data.get('nome', 'Empresa')}: Erro HTTP {e.response.status_code}")
         return _add_empty_fields(business_data)
-    
+        
     except Exception as e:
         print(f"❌ {business_data.get('nome', 'Empresa')}: Erro inesperado: {str(e)}")
         return _add_empty_fields(business_data)
@@ -191,7 +191,7 @@ def _extract_facebook(soup: BeautifulSoup, base_url: str) -> str:
         if 'facebook.com/' in href:
             if href.startswith('http'):
                 return href
-            else:
+    else:
                 return urljoin(base_url, href)
     
     return ""
