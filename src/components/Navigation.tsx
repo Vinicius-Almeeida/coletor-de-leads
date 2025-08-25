@@ -13,8 +13,13 @@ const Navigation: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
+            <img
+              src="/3IAN-ORANGE.png"
+              alt="Logo Coletor de Leads"
+              className="h-8 w-auto mr-3"
+            />
             <h1 className="text-xl font-bold text-gray-800">
-              🎯 Coletor de Leads
+              Coletor de Leads
             </h1>
           </div>
 
