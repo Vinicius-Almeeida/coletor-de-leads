@@ -743,10 +743,6 @@ html_template = """
 </html>
 """
 
-# Criar arquivo de template
-with open('templates/index.html', 'w', encoding='utf-8') as f:
-    f.write(html_template)
-
 if __name__ == '__main__':
     print("🌐 Iniciando servidor web...")
     print("📱 Acesse: http://localhost:5000")
