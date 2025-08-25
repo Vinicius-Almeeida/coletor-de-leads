@@ -8,5 +8,6 @@ export const API_ENDPOINTS = {
   DASHBOARD: `${API_BASE_URL}/api/dashboard-data`,
   WHATSAPP_LEADS: `${API_BASE_URL}/api/whatsapp-leads`,
   DOWNLOAD_WHATSAPP: `${API_BASE_URL}/api/download-whatsapp-leads`,
+  DOWNLOAD: `${API_BASE_URL}/api/download`,
   HEALTH: `${API_BASE_URL}/api/health`,
 };

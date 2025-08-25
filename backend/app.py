@@ -38,7 +38,8 @@ search_status = {
     'found': 0,
     'current_item': '',
     'elapsed_time': 0,
-    'results': []
+    'results': [],
+    'current_nicho': ''
 }
 
 # Armazenamento de todas as buscas realizadas
@@ -79,7 +80,8 @@ def start_search():
             'found': 0,
             'current_item': '',
             'elapsed_time': 0,
-            'results': []
+            'results': [],
+            'current_nicho': nicho
         }
         
         # Executar busca real
@@ -116,21 +118,35 @@ def download_results():
         # Criar DataFrame
         df = pd.DataFrame(search_status['results'])
         
+        # Renomear colunas para português
+        df = df.rename(columns={
+            'nome': 'Empresa',
+            'telefone': 'Telefone',
+            'email': 'Email',
+            'site': 'Website',
+            'endereco': 'Endereço',
+            'whatsapp': 'WhatsApp',
+            'linkedin': 'LinkedIn',
+            'facebook': 'Facebook'
+        })
+        
         # Gerar nome do arquivo
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'leads_{timestamp}.xlsx'
+        filepath = os.path.join(os.getcwd(), filename)
         
         # Salvar como Excel
-        df.to_excel(filename, index=False, engine='openpyxl')
+        df.to_excel(filepath, index=False, engine='openpyxl')
         
         # Retornar arquivo
         return send_file(
-            filename,
+            filepath,
             as_attachment=True,
             download_name=filename,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     except Exception as e:
+        print(f"❌ Erro no download: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/dashboard-data', methods=['GET'])
@@ -144,7 +160,14 @@ def get_whatsapp_leads():
     """Retorna apenas leads que possuem WhatsApp"""
     global search_status
     
-    whatsapp_leads = [lead for lead in search_status['results'] if lead.get('whatsapp')]
+    whatsapp_leads = []
+    for lead in search_status['results']:
+        if lead.get('whatsapp'):
+            # Adicionar campos que o frontend espera
+            lead_with_extra_fields = lead.copy()
+            lead_with_extra_fields['empresa'] = lead.get('nome', '')
+            lead_with_extra_fields['segmento'] = search_status.get('current_nicho', 'Geral')
+            whatsapp_leads.append(lead_with_extra_fields)
     
     return jsonify({
         'total_whatsapp_leads': len(whatsapp_leads),
@@ -181,13 +204,14 @@ def download_whatsapp_leads():
         # Gerar nome do arquivo
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'whatsapp_leads_{timestamp}.xlsx'
+        filepath = os.path.join(os.getcwd(), filename)
         
         # Salvar como Excel
-        df.to_excel(filename, index=False, engine='openpyxl')
+        df.to_excel(filepath, index=False, engine='openpyxl')
         
         # Retornar arquivo
         return send_file(
-            filename,
+            filepath,
             as_attachment=True,
             download_name=filename,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

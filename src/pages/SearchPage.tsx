@@ -86,7 +86,7 @@ const SearchPage: React.FC = () => {
   };
 
   const downloadResults = () => {
-    window.location.href = "/api/download";
+    window.location.href = API_ENDPOINTS.DOWNLOAD;
   };
 
   return (
