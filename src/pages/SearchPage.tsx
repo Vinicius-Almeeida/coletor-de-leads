@@ -115,10 +115,10 @@ const SearchPage: React.FC = () => {
     if (!window.confirm("Tem certeza que deseja parar a busca atual?")) {
       return;
     }
-    
+
     try {
       console.log("⏹️ Parando busca...");
-      
+
       const response = await fetch(API_ENDPOINTS.STOP, {
         method: "POST",
         headers: {
@@ -130,24 +130,27 @@ const SearchPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Busca parada:", data);
-        
+
         // Atualizar status local
-        setSearchStatus(prev => ({
+        setSearchStatus((prev) => ({
           ...prev,
           running: false,
-          phase: 'Busca interrompida pelo usuário',
-          progress: 0
+          phase: "Busca interrompida pelo usuário",
+          progress: 0,
         }));
-        
+
         setIsSearching(false);
-        
+
         // Salvar status no localStorage
-        localStorage.setItem("searchStatus", JSON.stringify({
-          ...searchStatus,
-          running: false,
-          phase: 'Busca interrompida pelo usuário',
-          progress: 0
-        }));
+        localStorage.setItem(
+          "searchStatus",
+          JSON.stringify({
+            ...searchStatus,
+            running: false,
+            phase: "Busca interrompida pelo usuário",
+            progress: 0,
+          })
+        );
       } else {
         console.error("❌ Erro ao parar busca:", response.status);
         alert("Erro ao parar busca");
@@ -192,6 +195,41 @@ const SearchPage: React.FC = () => {
 
   const downloadResults = () => {
     window.location.href = API_ENDPOINTS.DOWNLOAD;
+  };
+
+  const clearSearch = () => {
+    // Confirmação antes de limpar
+    if (!window.confirm("Tem certeza que deseja limpar todos os dados da busca? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    console.log("🧹 Limpando dados da busca...");
+
+    // Limpar status da busca
+    const emptyStatus = {
+      running: false,
+      phase: "",
+      progress: 0,
+      total: 0,
+      found: 0,
+      current_item: "",
+      elapsed_time: 0,
+      results: [],
+    };
+
+    setSearchStatus(emptyStatus);
+    setIsSearching(false);
+
+    // Limpar campos de entrada
+    setNicho("");
+    setCidade("");
+
+    // Limpar localStorage
+    localStorage.removeItem("searchStatus");
+    localStorage.removeItem("lastNicho");
+    localStorage.removeItem("lastCidade");
+
+    console.log("✅ Dados da busca limpos com sucesso");
   };
 
   return (
@@ -249,6 +287,15 @@ const SearchPage: React.FC = () => {
                 ⏹️ Parar Busca
               </button>
             )}
+
+            {(searchStatus.results.length > 0 || searchStatus.phase) && (
+              <button
+                onClick={clearSearch}
+                className="bg-gray-500 text-white px-6 py-3 rounded-md hover:bg-gray-600 transition-colors font-medium"
+              >
+                🧹 Limpar Busca
+              </button>
+            )}
           </div>
         </div>
 
@@ -304,12 +351,21 @@ const SearchPage: React.FC = () => {
                 📋 Resultados ({searchStatus.results.length})
               </h3>
 
-              <button
-                onClick={downloadResults}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-              >
-                📥 Download Excel
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={downloadResults}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                >
+                  📥 Download Excel
+                </button>
+                
+                <button
+                  onClick={clearSearch}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
+                >
+                  🧹 Limpar
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
