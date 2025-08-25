@@ -39,7 +39,7 @@ def enrich_data_with_scraping(business_data: Dict[str, str]) -> Dict[str, str]:
     
     try:
         # Fazer requisição HTTP
-        headers = {
+    headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
@@ -302,7 +302,7 @@ def validate_url(url: str) -> bool:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except Exception:
-        return False
+    return False
 
 
 if __name__ == "__main__":

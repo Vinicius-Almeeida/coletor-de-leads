@@ -41,6 +41,11 @@ all_searches = {
 def handler(event, context):
     """Função principal da Netlify"""
     
+    # Log de debug
+    print(f"DEBUG: Event received - {event}")
+    print(f"DEBUG: Path - {event.get('path', '')}")
+    print(f"DEBUG: Method - {event.get('httpMethod', '')}")
+    
     # Configurar CORS
     headers = {
         'Access-Control-Allow-Origin': '*',
@@ -59,6 +64,9 @@ def handler(event, context):
     # Extrair path e método
     path = event.get('path', '').replace('/.netlify/functions/api', '')
     method = event['httpMethod']
+    
+    print(f"DEBUG: Processed path - {path}")
+    print(f"DEBUG: Method - {method}")
     
     try:
         # Roteamento
@@ -79,13 +87,15 @@ def handler(event, context):
         elif path == '/download-whatsapp-leads' and method == 'GET':
             return download_whatsapp_leads(headers)
         else:
+            print(f"DEBUG: No route found for {path} {method}")
             return {
                 'statusCode': 404,
                 'headers': headers,
-                'body': json.dumps({'error': 'Endpoint não encontrado'})
+                'body': json.dumps({'error': f'Endpoint não encontrado: {path} {method}'})
             }
             
     except Exception as e:
+        print(f"DEBUG: Error in handler - {str(e)}")
         return {
             'statusCode': 500,
             'headers': headers,
