@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "test_vercel.py",
+      "src": "app_web_simple.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/test_vercel.py"
+      "dest": "/app_web_simple.py"
     }
   ],
   "env": {
@@ -17,7 +17,7 @@
     "FLASK_ENV": "production"
   },
   "functions": {
-    "test_vercel.py": {
+    "app_web_simple.py": {
       "maxDuration": 30
     }
   }
