@@ -20,7 +20,24 @@ from scraper import enrich_data_with_scraping
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=['*'], methods=['GET', 'POST', 'OPTIONS'], allow_headers=['Content-Type', 'Accept'])
+CORS(app, 
+     origins=['*'], 
+     methods=['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'], 
+     allow_headers=['Content-Type', 'Accept', 'Authorization', 'X-Requested-With'],
+     supports_credentials=True,
+     max_age=3600)
+
+@app.after_request
+def after_request(response):
+    """Adiciona headers CORS para todas as respostas"""
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.add('Pragma', 'no-cache')
+    response.headers.add('Expires', '0')
+    return response
 
 # Configuração da API do Google Places
 GOOGLE_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
@@ -64,7 +81,10 @@ def test_endpoint():
     """Endpoint de teste simples"""
     return jsonify({
         'message': 'Backend funcionando!',
-        'timestamp': datetime.now().isoformat()
+        'timestamp': datetime.now().isoformat(),
+        'user_agent': request.headers.get('User-Agent', 'Unknown'),
+        'origin': request.headers.get('Origin', 'Unknown'),
+        'host': request.headers.get('Host', 'Unknown')
     })
 
 @app.route('/api/search', methods=['POST'])
@@ -413,3 +433,6 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"📱 Backend rodando em: http://localhost:{port}")
     app.run(debug=False, host='0.0.0.0', port=port)
+
+# Para deploy no Vercel
+app.debug = False

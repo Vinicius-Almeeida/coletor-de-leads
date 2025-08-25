@@ -37,6 +37,7 @@ const SearchPage: React.FC = () => {
         };
   });
   const [isSearching, setIsSearching] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<string>("");
 
   // Carregar dados do backend quando a página carregar
   useEffect(() => {
@@ -57,6 +58,67 @@ const SearchPage: React.FC = () => {
 
     loadBackendData();
   }, []);
+
+  // Limpar inputs quando a página é atualizada (refresh) ou quando sai da página
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      setNicho("");
+      setCidade("");
+      localStorage.removeItem("lastNicho");
+      localStorage.removeItem("lastCidade");
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        setNicho("");
+        setCidade("");
+        localStorage.removeItem("lastNicho");
+        localStorage.removeItem("lastCidade");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  const testConnection = async () => {
+    setConnectionStatus("Testando conexão...");
+    try {
+      console.log("🔍 Testando conexão com:", API_ENDPOINTS.TEST);
+
+      const response = await fetch(API_ENDPOINTS.TEST, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Conexão OK:", data);
+        setConnectionStatus(
+          `✅ Conectado! User-Agent: ${data.user_agent?.substring(0, 50)}...`
+        );
+      } else {
+        const errorText = await response.text();
+        console.error("❌ Erro na conexão:", response.status, errorText);
+        setConnectionStatus(`❌ Erro ${response.status}: ${errorText}`);
+      }
+    } catch (error) {
+      console.error("❌ Erro de rede:", error);
+      setConnectionStatus(
+        `❌ Erro de rede: ${
+          error instanceof Error ? error.message : "Erro desconhecido"
+        }`
+      );
+    }
+  };
 
   const startSearch = async () => {
     if (!nicho || !cidade) {
@@ -184,6 +246,14 @@ const SearchPage: React.FC = () => {
         if (!status.running) {
           setIsSearching(false);
           clearInterval(interval);
+
+          // Limpar inputs quando a busca termina
+          if (status.phase === "Busca concluída com sucesso!") {
+            setNicho("");
+            setCidade("");
+            localStorage.removeItem("lastNicho");
+            localStorage.removeItem("lastCidade");
+          }
         }
       } catch (error) {
         console.error("❌ Erro ao buscar status:", error);
@@ -197,9 +267,22 @@ const SearchPage: React.FC = () => {
     window.location.href = API_ENDPOINTS.DOWNLOAD;
   };
 
+  const clearInputs = () => {
+    console.log("🧹 Limpando campos de entrada...");
+    setNicho("");
+    setCidade("");
+    localStorage.removeItem("lastNicho");
+    localStorage.removeItem("lastCidade");
+    console.log("✅ Campos de entrada limpos");
+  };
+
   const clearSearch = () => {
     // Confirmação antes de limpar
-    if (!window.confirm("Tem certeza que deseja limpar todos os dados da busca? Esta ação não pode ser desfeita.")) {
+    if (
+      !window.confirm(
+        "Tem certeza que deseja limpar todos os dados da busca? Esta ação não pode ser desfeita."
+      )
+    ) {
       return;
     }
 
@@ -270,6 +353,25 @@ const SearchPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Status da Conexão */}
+          {connectionStatus && (
+            <div className="mb-4 p-3 rounded-md text-sm">
+              {connectionStatus.includes("✅") ? (
+                <div className="bg-green-100 text-green-800 border border-green-200">
+                  {connectionStatus}
+                </div>
+              ) : connectionStatus.includes("❌") ? (
+                <div className="bg-red-100 text-red-800 border border-red-200">
+                  {connectionStatus}
+                </div>
+              ) : (
+                <div className="bg-blue-100 text-blue-800 border border-blue-200">
+                  {connectionStatus}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
             <button
               onClick={startSearch}
@@ -277,6 +379,20 @@ const SearchPage: React.FC = () => {
               className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
               {isSearching ? "🔍 Buscando..." : "🚀 Iniciar Busca"}
+            </button>
+
+            <button
+              onClick={testConnection}
+              className="bg-purple-600 text-white px-6 py-3 rounded-md hover:bg-purple-700 transition-colors font-medium"
+            >
+              🔧 Testar Conexão
+            </button>
+
+            <button
+              onClick={clearInputs}
+              className="bg-orange-600 text-white px-6 py-3 rounded-md hover:bg-orange-700 transition-colors font-medium"
+            >
+              🗑️ Limpar Campos
             </button>
 
             {isSearching && (
@@ -293,7 +409,7 @@ const SearchPage: React.FC = () => {
                 onClick={clearSearch}
                 className="bg-gray-500 text-white px-6 py-3 rounded-md hover:bg-gray-600 transition-colors font-medium"
               >
-                🧹 Limpar Busca
+                🧹 Limpar Tudo
               </button>
             )}
           </div>
@@ -358,12 +474,12 @@ const SearchPage: React.FC = () => {
                 >
                   📥 Download Excel
                 </button>
-                
+
                 <button
                   onClick={clearSearch}
                   className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
                 >
-                  🧹 Limpar
+                  🧹 Limpar Tudo
                 </button>
               </div>
             </div>
