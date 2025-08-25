@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navigation from "../components/Navigation";
 import { API_ENDPOINTS } from "../config";
 
@@ -14,25 +14,57 @@ interface SearchStatus {
 }
 
 const SearchPage: React.FC = () => {
-  const [nicho, setNicho] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [searchStatus, setSearchStatus] = useState<SearchStatus>({
-    running: false,
-    phase: "",
-    progress: 0,
-    total: 0,
-    found: 0,
-    current_item: "",
-    elapsed_time: 0,
-    results: [],
+  const [nicho, setNicho] = useState(() => {
+    return localStorage.getItem('lastNicho') || "";
+  });
+  const [cidade, setCidade] = useState(() => {
+    return localStorage.getItem('lastCidade') || "";
+  });
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>(() => {
+    // Carregar dados salvos do localStorage
+    const saved = localStorage.getItem('searchStatus');
+    return saved ? JSON.parse(saved) : {
+      running: false,
+      phase: "",
+      progress: 0,
+      total: 0,
+      found: 0,
+      current_item: "",
+      elapsed_time: 0,
+      results: [],
+    };
   });
   const [isSearching, setIsSearching] = useState(false);
+
+  // Carregar dados do backend quando a página carregar
+  useEffect(() => {
+    const loadBackendData = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.STATUS);
+        const status = await response.json();
+        
+        // Só atualizar se o backend tiver dados mais recentes
+        if (status.results && status.results.length > 0) {
+          setSearchStatus(status);
+          localStorage.setItem('searchStatus', JSON.stringify(status));
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do backend:", error);
+      }
+    };
+
+    loadBackendData();
+  }, []);
 
   const startSearch = async () => {
     if (!nicho || !cidade) {
       alert("Por favor, preencha o nicho e a cidade");
       return;
     }
+
+    // Salvar nicho e cidade no localStorage
+    localStorage.setItem('lastNicho', nicho);
+    localStorage.setItem('lastCidade', cidade);
 
     setIsSearching(true);
     try {
@@ -73,6 +105,9 @@ const SearchPage: React.FC = () => {
         const response = await fetch(API_ENDPOINTS.STATUS);
         const status = await response.json();
         setSearchStatus(status);
+        
+        // Salvar status no localStorage
+        localStorage.setItem('searchStatus', JSON.stringify(status));
 
         if (!status.running) {
           setIsSearching(false);
