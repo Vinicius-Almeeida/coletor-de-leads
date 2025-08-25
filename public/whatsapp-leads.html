@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsApp Leads - Coletor de Leads</title>
+    <style>
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+      }
+
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          min-height: 100vh;
+          padding: 20px;
+      }
+
+      .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          background: white;
+          border-radius: 15px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+          overflow: hidden;
+      }
+
+      .header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 30px;
+          text-align: center;
+      }
+
+      .header h1 {
+          font-size: 2.5em;
+          margin-bottom: 10px;
+      }
+
+      .nav-links {
+          margin-top: 20px;
+      }
+
+      .nav-link {
+          color: white;
+          text-decoration: none;
+          padding: 10px 20px;
+          margin: 0 10px;
+          border-radius: 25px;
+          transition: all 0.3s;
+          background: rgba(255,255,255,0.1);
+      }
+
+      .nav-link:hover {
+          background: rgba(255,255,255,0.2);
+          transform: translateY(-2px);
+      }
+
+      .nav-link.active {
+          background: rgba(255,255,255,0.3);
+          font-weight: bold;
+      }
+
+      .content {
+          padding: 30px;
+      }
+
+      .stats-bar {
+          background: #f8f9fa;
+          padding: 20px;
+          border-radius: 10px;
+          margin-bottom: 30px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+
+      .stats-info {
+          display: flex;
+          gap: 30px;
+      }
+
+      .stat-item {
+          text-align: center;
+      }
+
+      .stat-number {
+          font-size: 2em;
+          font-weight: bold;
+          color: #667eea;
+      }
+
+      .stat-label {
+          color: #666;
+          font-size: 0.9em;
+      }
+
+      .btn {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          padding: 12px 30px;
+          border-radius: 8px;
+          font-size: 16px;
+          cursor: pointer;
+          transition: transform 0.2s;
+      }
+
+      .btn:hover {
+          transform: translateY(-2px);
+      }
+
+      .btn-success {
+          background: #28a745;
+      }
+
+      .leads-table {
+          background: #f8f9fa;
+          padding: 20px;
+          border-radius: 10px;
+      }
+
+      .leads-table h3 {
+          margin-bottom: 20px;
+          color: #333;
+      }
+
+      table {
+          width: 100%;
+          border-collapse: collapse;
+      }
+
+      th, td {
+          padding: 12px;
+          text-align: left;
+          border-bottom: 1px solid #ddd;
+      }
+
+      th {
+          background: #667eea;
+          color: white;
+      }
+
+      tr:hover {
+          background: #f5f5f5;
+      }
+
+      .whatsapp-link {
+          color: #25d366;
+          text-decoration: none;
+          font-weight: bold;
+      }
+
+      .whatsapp-link:hover {
+          text-decoration: underline;
+      }
+
+      .loading {
+          text-align: center;
+          padding: 40px;
+      }
+
+      .spinner {
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #667eea;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 15px;
+      }
+
+      @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+
+      .no-leads {
+          text-align: center;
+          padding: 40px;
+          color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📞 WhatsApp Leads</h1>
+        <p>Leads que possuem números de WhatsApp</p>
+        <div class="nav-links">
+          <a href="/" class="nav-link">🔍 Nova Busca</a>
+          <a href="/dashboard" class="nav-link">📊 Dashboard</a>
+          <a href="/whatsapp-leads" class="nav-link active"
+            >📞 WhatsApp Leads</a
+          >
+        </div>
+      </div>
+
+      <div class="content">
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <p>Carregando leads com WhatsApp...</p>
+        </div>
+
+        <div id="leads-content" style="display: none;">
+          <div class="stats-bar">
+            <div class="stats-info">
+              <div class="stat-item">
+                <div class="stat-number" id="totalWhatsAppLeads">0</div>
+                <div class="stat-label">Leads com WhatsApp</div>
+              </div>
+            </div>
+            <button class="btn btn-success" onclick="downloadWhatsAppLeads()">
+              📥 Download Excel
+            </button>
+          </div>
+
+          <div class="leads-table">
+            <h3>📋 Lista de Leads com WhatsApp</h3>
+            <div id="no-leads" class="no-leads" style="display: none;">
+              <p>Nenhum lead com WhatsApp encontrado.</p>
+              <p>Faça uma busca primeiro para encontrar leads com WhatsApp.</p>
+            </div>
+            <table id="leadsTable" style="display: none;">
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Segmento</th>
+                  <th>WhatsApp</th>
+                  <th>Telefone</th>
+                  <th>Email</th>
+                  <th>Website</th>
+                </tr>
+              </thead>
+              <tbody id="leadsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Carregar leads com WhatsApp
+      async function loadWhatsAppLeads() {
+          try {
+              const response = await fetch('/.netlify/functions/api/whatsapp-leads');
+              const data = await response.json();
+
+              // Atualizar estatísticas
+              document.getElementById('totalWhatsAppLeads').textContent = data.total_whatsapp_leads;
+
+              // Mostrar conteúdo
+              document.getElementById('loading').style.display = 'none';
+              document.getElementById('leads-content').style.display = 'block';
+
+              if (data.total_whatsapp_leads === 0) {
+                  document.getElementById('no-leads').style.display = 'block';
+                  document.getElementById('leadsTable').style.display = 'none';
+              } else {
+                  document.getElementById('no-leads').style.display = 'none';
+                  document.getElementById('leadsTable').style.display = 'table';
+
+                  // Atualizar tabela
+                  const tbody = document.getElementById('leadsTableBody');
+                  tbody.innerHTML = '';
+
+                  data.leads.forEach(lead => {
+                      const row = document.createElement('tr');
+                      const whatsappLink = lead.whatsapp ?
+                          `<a href="https://wa.me/${lead.whatsapp}" target="_blank" class="whatsapp-link">${lead.whatsapp}</a>` :
+                          'Não informado';
+
+                      row.innerHTML = `
+                          <td>${lead.empresa || 'Não informado'}</td>
+                          <td>${lead.segmento || 'Não informado'}</td>
+                          <td>${whatsappLink}</td>
+                          <td>${lead.telefone || 'Não informado'}</td>
+                          <td>${lead.email || 'Não informado'}</td>
+                          <td>${lead.site || 'Não informado'}</td>
+                      `;
+                      tbody.appendChild(row);
+                  });
+              }
+
+          } catch (error) {
+              console.error('Erro ao carregar leads:', error);
+              document.getElementById('loading').innerHTML = '<p>Erro ao carregar leads com WhatsApp</p>';
+          }
+      }
+
+      // Download dos leads com WhatsApp
+      function downloadWhatsAppLeads() {
+          window.location.href = '/.netlify/functions/api/download-whatsapp-leads';
+      }
+
+      // Carregar dados quando a página carregar
+      document.addEventListener('DOMContentLoaded', loadWhatsAppLeads);
+    </script>
+  </body>
+</html>
