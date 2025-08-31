@@ -17,27 +17,45 @@ async function enrichDataWithScraping(business) {
 
       const scrapedData = await scrapeWebsite(business.site);
 
-      // Mesclar dados encontrados
+      // Priorizar emails e WhatsApp
       if (scrapedData.email) {
         enrichedBusiness.email = scrapedData.email;
+        console.log(`✅ Email encontrado: ${scrapedData.email}`);
       }
+      if (scrapedData.whatsapp) {
+        enrichedBusiness.whatsapp = scrapedData.whatsapp;
+        console.log(`✅ WhatsApp encontrado: ${scrapedData.whatsapp}`);
+      }
+      
+      // Outros dados
       if (scrapedData.linkedin) {
         enrichedBusiness.linkedin = scrapedData.linkedin;
       }
       if (scrapedData.facebook) {
         enrichedBusiness.facebook = scrapedData.facebook;
       }
-      if (scrapedData.whatsapp) {
-        enrichedBusiness.whatsapp = scrapedData.whatsapp;
-      }
     }
 
-    // Tentar encontrar WhatsApp no telefone
+    // Tentar encontrar WhatsApp no telefone (prioridade)
     if (business.telefone && !enrichedBusiness.whatsapp) {
       const whatsappNumber = extractWhatsAppNumber(business.telefone);
       if (whatsappNumber) {
         enrichedBusiness.whatsapp = whatsappNumber;
+        console.log(`✅ WhatsApp extraído do telefone: ${whatsappNumber}`);
       }
+    }
+
+    // Log dos dados encontrados
+    const foundData = [];
+    if (enrichedBusiness.email) foundData.push('Email');
+    if (enrichedBusiness.whatsapp) foundData.push('WhatsApp');
+    if (enrichedBusiness.linkedin) foundData.push('LinkedIn');
+    if (enrichedBusiness.facebook) foundData.push('Facebook');
+    
+    if (foundData.length > 0) {
+      console.log(`📊 Dados encontrados para ${business.nome}: ${foundData.join(', ')}`);
+    } else {
+      console.log(`⚠️ Nenhum dado encontrado para ${business.nome}`);
     }
   } catch (error) {
     console.error(`❌ Erro no scraping de ${business.nome}:`, error.message);
@@ -130,13 +148,13 @@ async function scrapeWebsite(url) {
 }
 
 /**
- * Extrai email do HTML
+ * Extrai email do HTML com prioridade
  * @param {Object} $ - Cheerio object
  * @param {string} html - HTML completo
  * @returns {string} Email encontrado
  */
 function extractEmail($, html) {
-  // Buscar em atributos href
+  // 1. Prioridade: Buscar em atributos href mailto
   const emailLinks = $('a[href^="mailto:"]');
   if (emailLinks.length > 0) {
     const email = emailLinks.first().attr("href").replace("mailto:", "");
@@ -145,15 +163,45 @@ function extractEmail($, html) {
     }
   }
 
-  // Buscar em texto usando regex
+  // 2. Buscar em elementos com classes/ids relacionados a email
+  const emailElements = $('[class*="email"], [id*="email"], [class*="mail"], [id*="mail"]');
+  for (let i = 0; i < emailElements.length; i++) {
+    const element = emailElements.eq(i);
+    const text = element.text();
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+    const emails = text.match(emailRegex);
+    if (emails && emails.length > 0) {
+      for (const email of emails) {
+        if (isValidEmail(email)) {
+          return email;
+        }
+      }
+    }
+  }
+
+  // 3. Buscar em todo o HTML usando regex
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
   const emails = html.match(emailRegex);
 
   if (emails && emails.length > 0) {
-    for (const email of emails) {
-      if (isValidEmail(email)) {
-        return email;
-      }
+    // Filtrar emails válidos e priorizar emails corporativos
+    const validEmails = emails.filter(email => isValidEmail(email));
+    
+    // Priorizar emails que não são genéricos
+    const corporateEmails = validEmails.filter(email => 
+      !email.includes('noreply') && 
+      !email.includes('no-reply') && 
+      !email.includes('donotreply') &&
+      !email.includes('info@') &&
+      !email.includes('admin@')
+    );
+    
+    if (corporateEmails.length > 0) {
+      return corporateEmails[0];
+    }
+    
+    if (validEmails.length > 0) {
+      return validEmails[0];
     }
   }
 
@@ -201,20 +249,46 @@ function extractFacebook($, html) {
 }
 
 /**
- * Extrai WhatsApp do HTML
+ * Extrai WhatsApp do HTML com prioridade
  * @param {Object} $ - Cheerio object
  * @param {string} html - HTML completo
  * @returns {string} WhatsApp encontrado
  */
 function extractWhatsApp($, html) {
-  // Buscar em links
+  // 1. Prioridade: Buscar em links WhatsApp
   const whatsappLinks = $('a[href*="wa.me"], a[href*="whatsapp.com"]');
   if (whatsappLinks.length > 0) {
     const href = whatsappLinks.first().attr("href");
-    return extractWhatsAppNumber(href);
+    const number = extractWhatsAppNumber(href);
+    if (number) return number;
   }
 
-  // Buscar em texto
+  // 2. Buscar em elementos com classes/ids relacionados a WhatsApp
+  const whatsappElements = $('[class*="whatsapp"], [id*="whatsapp"], [class*="wa"], [id*="wa"]');
+  for (let i = 0; i < whatsappElements.length; i++) {
+    const element = whatsappElements.eq(i);
+    const text = element.text();
+    const whatsappRegex = /(?:wa\.me|whatsapp\.com)\/(\d+)/g;
+    const whatsapps = text.match(whatsappRegex);
+    if (whatsapps && whatsapps.length > 0) {
+      const number = extractWhatsAppNumber(whatsapps[0]);
+      if (number) return number;
+    }
+  }
+
+  // 3. Buscar números de telefone que podem ser WhatsApp
+  const phoneRegex = /(?:\+55|55)?\s*(?:\(?\d{2}\)?)\s*(?:9?\d{4})-?\d{4}/g;
+  const phones = html.match(phoneRegex);
+  if (phones && phones.length > 0) {
+    for (const phone of phones) {
+      const number = extractWhatsAppNumber(phone);
+      if (number && number.length >= 10) {
+        return number;
+      }
+    }
+  }
+
+  // 4. Buscar em todo o HTML usando regex WhatsApp
   const whatsappRegex = /(?:wa\.me|whatsapp\.com)\/(\d+)/g;
   const whatsapps = html.match(whatsappRegex);
 
