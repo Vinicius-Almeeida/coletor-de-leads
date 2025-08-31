@@ -1,13 +1,13 @@
 # 🎯 Coletor de Leads
 
-Sistema híbrido para coleta de leads empresariais usando Google Places API e web
+Sistema para coleta de leads empresariais usando Google Places API e web
 scraping ético.
 
-## 🚀 Nova Arquitetura
+## 🚀 Arquitetura
 
 - **Frontend**: React + TypeScript + Tailwind CSS
-- **Backend**: Python Flask
-- **Deploy**: Vercel (Frontend) + Python Backend
+- **Backend**: Node.js + Express
+- **Deploy**: Vercel (Frontend) + Node.js Backend
 
 ## 📁 Estrutura do Projeto
 
@@ -18,10 +18,11 @@ coletor-de-leads/
 │   ├── pages/             # Páginas da aplicação
 │   ├── App.tsx            # Componente principal
 │   └── index.tsx          # Ponto de entrada
-├── backend/               # Backend Python
-│   ├── app.py             # Servidor Flask
-│   └── requirements.txt   # Dependências Python
-├── package.json           # Dependências Node.js
+├── backend-js/            # Backend Node.js
+│   ├── server.js          # Servidor Express
+│   ├── package.json       # Dependências Node.js
+│   └── services/          # Serviços do backend
+├── package.json           # Dependências Frontend
 ├── tailwind.config.js     # Configuração Tailwind
 └── tsconfig.json          # Configuração TypeScript
 ```
@@ -41,26 +42,26 @@ npm start
 npm run build
 ```
 
-### 2. Backend (Python Flask)
+### 2. Backend (Node.js)
 
 ```bash
-# Navegar para o diretório backend
-cd backend
-
-# Criar ambiente virtual
-python -m venv venv
-
-# Ativar ambiente virtual
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
+# Navegar para o diretório backend-js
+cd backend-js
 
 # Instalar dependências
-pip install -r requirements.txt
+npm install
 
-# Executar servidor
-python app.py
+# Executar em desenvolvimento
+npm run dev
+
+# Executar em produção
+npm start
+
+# Executar testes
+npm test
+
+# Executar testes com coverage
+npm run test:coverage
 ```
 
 ### 3. Configuração da API Google Places
@@ -104,18 +105,38 @@ python app.py
 - Dados organizados e estruturados
 - Nomeação automática com timestamp
 
-## 🚀 Deploy
+## 🚀 Deploy Automático
 
-### Frontend (Vercel)
+### CI/CD com GitHub Actions
+
+O projeto está configurado com CI/CD automático:
+
+1. **Push para `main`**: Deploy automático para produção
+2. **Push para `develop`**: Executa testes
+3. **Pull Request**: Executa testes antes do merge
+
+### Configuração dos Secrets
+
+Configure os seguintes secrets no GitHub:
+
+- `GOOGLE_PLACES_API_KEY`: Sua chave da Google Places API
+- `VERCEL_TOKEN`: Token do Vercel
+- `VERCEL_ORG_ID`: ID da organização no Vercel
+- `VERCEL_PROJECT_ID`: ID do projeto backend no Vercel
+- `VERCEL_FRONTEND_PROJECT_ID`: ID do projeto frontend no Vercel
+
+### Deploy Manual
+
+#### Frontend (Vercel)
 
 1. Conecte seu repositório ao Vercel
 2. Configure as variáveis de ambiente
 3. Deploy automático a cada push
 
-### Backend (Python)
+#### Backend (Vercel)
 
-- Pode ser deployado em qualquer servidor Python
-- Heroku, Railway, DigitalOcean, etc.
+1. Deploy automático via GitHub Actions
+2. Ou deploy manual via Vercel CLI
 
 ## 🔧 Configuração de Desenvolvimento
 
@@ -129,7 +150,7 @@ GOOGLE_PLACES_API_KEY=sua_chave_da_api_aqui
 
 ### Proxy para Desenvolvimento
 
-O frontend está configurado para fazer requisições para `http://localhost:5000`
+O frontend está configurado para fazer requisições para `http://localhost:3001`
 durante o desenvolvimento.
 
 ## 📋 Tecnologias Utilizadas
@@ -143,12 +164,13 @@ durante o desenvolvimento.
 
 ### Backend
 
-- **Flask** - Framework web Python
-- **Flask-CORS** - Cross-Origin Resource Sharing
-- **Pandas** - Manipulação de dados
-- **OpenPyXL** - Geração de arquivos Excel
-- **Requests** - Requisições HTTP
-- **BeautifulSoup** - Web scraping
+- **Node.js** - Runtime JavaScript
+- **Express** - Framework web
+- **CORS** - Cross-Origin Resource Sharing
+- **Puppeteer** - Web scraping
+- **ExcelJS** - Geração de arquivos Excel
+- **Axios** - Requisições HTTP
+- **Cheerio** - Parsing HTML
 
 ## 🎯 Próximos Passos
 

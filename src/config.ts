@@ -3,8 +3,8 @@ const isDevelopment = process.env.NODE_ENV === "development";
 const API_BASE_URL =
   process.env.REACT_APP_API_URL ||
   (isDevelopment
-    ? "http://localhost:5000"
-    : "https://coletor-de-leads-backend-production.up.railway.app");
+    ? "http://localhost:3001"
+    : "https://coletor-de-leads-backend-js.vercel.app");
 
 export const API_ENDPOINTS = {
   SEARCH: `${API_BASE_URL}/api/search`,

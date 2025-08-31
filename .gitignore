@@ -15,19 +15,6 @@ dist/
 .env.test.local
 .env.production.local
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-.venv/
-
 # IDE
 .vscode/
 .idea/
@@ -87,3 +74,10 @@ whatsapp_leads_*.xlsx
 # Temporary files
 *.tmp
 *.temp
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Vercel
+.vercel
