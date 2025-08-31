@@ -193,9 +193,9 @@ app.get("/api/dashboard-data", (req, res) => {
 app.get("/api/whatsapp-leads", (req, res) => {
   // Coletar todos os leads com WhatsApp de todas as buscas no cache
   let allWhatsappLeads = [];
-  
+
   Object.entries(searchCache).forEach(([cacheKey, companies]) => {
-    const nicho = cacheKey.split('_')[0]; // Extrair nicho da chave do cache
+    const nicho = cacheKey.split("_")[0]; // Extrair nicho da chave do cache
     const whatsappLeads = companies
       .filter((lead) => lead.whatsapp)
       .map((lead) => ({
@@ -203,7 +203,7 @@ app.get("/api/whatsapp-leads", (req, res) => {
         empresa: lead.nome,
         segmento: nicho || "Geral",
       }));
-    
+
     allWhatsappLeads = [...allWhatsappLeads, ...whatsappLeads];
   });
 
@@ -217,9 +217,9 @@ app.get("/api/download-whatsapp-leads", async (req, res) => {
   try {
     // Coletar todos os leads com WhatsApp de todas as buscas no cache
     let allWhatsappLeads = [];
-    
+
     Object.entries(searchCache).forEach(([cacheKey, companies]) => {
-      const nicho = cacheKey.split('_')[0]; // Extrair nicho da chave do cache
+      const nicho = cacheKey.split("_")[0]; // Extrair nicho da chave do cache
       const whatsappLeads = companies
         .filter((lead) => lead.whatsapp)
         .map((lead) => ({
@@ -227,7 +227,7 @@ app.get("/api/download-whatsapp-leads", async (req, res) => {
           empresa: lead.nome,
           segmento: nicho || "Geral",
         }));
-      
+
       allWhatsappLeads = [...allWhatsappLeads, ...whatsappLeads];
     });
 
@@ -306,14 +306,17 @@ async function realSearch(nicho, cidade) {
       return;
     }
 
-    searchStatus.total = Math.min(newBusinesses.length, 20);
+    searchStatus.total = Math.min(newBusinesses.length, 50);
     searchStatus.progress = 30;
-    searchStatus.phase = `Fase 2: Enriquecendo dados de ${Math.min(newBusinesses.length, 20)} empresas (limitado para velocidade)`;
+    searchStatus.phase = `Fase 2: Enriquecendo dados de ${Math.min(
+      newBusinesses.length,
+      50
+    )} empresas`;
 
-    // Enriquecer dados com scraping (limitado a 20 empresas para velocidade)
+    // Enriquecer dados com scraping (limitado a 50 empresas)
     const enrichedResults = [];
-    const maxBusinesses = Math.min(newBusinesses.length, 20);
-    
+    const maxBusinesses = Math.min(newBusinesses.length, 50);
+
     for (let i = 0; i < maxBusinesses; i++) {
       // Verificar se a busca foi interrompida
       if (!searchStatus.running) {
