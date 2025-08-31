@@ -7,20 +7,17 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  test-backend:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "20.x"
           cache: "npm"
 
       - name: Install backend dependencies
@@ -35,6 +32,19 @@ jobs:
         env:
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
 
+  test-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
       - name: Install frontend dependencies
         run: npm ci
 
@@ -45,9 +55,10 @@ jobs:
         run: npm run build
 
   deploy-backend:
-    needs: test
+    needs: test-backend
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -70,11 +81,13 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./backend-js
+          vercel-args: "--prod"
 
   deploy-frontend:
-    needs: test
+    needs: test-frontend
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -97,3 +110,4 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          vercel-args: "--prod"

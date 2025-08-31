@@ -17,7 +17,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "bash scripts/deploy.sh",
+    "deploy:backend": "cd backend-js && vercel --prod",
+    "deploy:frontend": "vercel --prod",
+    "deploy:parallel": "npm run deploy:backend & npm run deploy:frontend & wait"
   },
   "eslintConfig": {
     "extends": [
