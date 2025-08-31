@@ -48,7 +48,9 @@ const SearchPage: React.FC = () => {
         // Se temos um searchId salvo, tentar carregar o status
         const savedSearchId = localStorage.getItem("searchId");
         if (savedSearchId) {
-          const response = await fetch(`${API_ENDPOINTS.STATUS}?searchId=${savedSearchId}`);
+          const response = await fetch(
+            `${API_ENDPOINTS.STATUS}?searchId=${savedSearchId}`
+          );
           if (response.ok) {
             const status = await response.json();
             setSearchStatus(status);
@@ -158,13 +160,13 @@ const SearchPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Busca iniciada com sucesso:", data);
-        
+
         // Salvar searchId
         if (data.searchId) {
           localStorage.setItem("searchId", data.searchId);
-          setSearchStatus(prev => ({ ...prev, searchId: data.searchId }));
+          setSearchStatus((prev) => ({ ...prev, searchId: data.searchId }));
         }
-        
+
         // Iniciar polling do status
         pollStatus();
       } else {
@@ -242,7 +244,10 @@ const SearchPage: React.FC = () => {
   const pollStatus = async () => {
     const interval = setInterval(async () => {
       try {
-        const searchId = searchStatus.searchId || localStorage.getItem("searchId");
+        const searchId =
+          searchStatus.searchId ||
+          localStorage.getItem("searchId") ||
+          undefined;
         if (!searchId) {
           console.log("❌ Nenhum searchId encontrado");
           clearInterval(interval);
@@ -250,11 +255,14 @@ const SearchPage: React.FC = () => {
           return;
         }
 
-        const response = await fetch(`${API_ENDPOINTS.STATUS}?searchId=${searchId}`, {
-          headers: {
-            Accept: "application/json",
-          },
-        });
+        const response = await fetch(
+          `${API_ENDPOINTS.STATUS}?searchId=${searchId}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
 
         if (!response.ok) {
           console.error("❌ Erro ao buscar status:", response.status);
@@ -289,10 +297,19 @@ const SearchPage: React.FC = () => {
 
   const downloadResults = () => {
     const searchId = searchStatus.searchId || localStorage.getItem("searchId");
+    console.log("🔍 Tentando download com searchId:", searchId);
+    console.log("🔍 searchStatus.searchId:", searchStatus.searchId);
+    console.log("🔍 localStorage searchId:", localStorage.getItem("searchId"));
+
     if (!searchId) {
       alert("Erro: ID da busca não encontrado. Tente fazer uma nova busca.");
       return;
     }
+
+    console.log(
+      "📥 Iniciando download para:",
+      `${API_ENDPOINTS.DOWNLOAD}?searchId=${searchId}`
+    );
     window.location.href = `${API_ENDPOINTS.DOWNLOAD}?searchId=${searchId}`;
   };
 
@@ -317,8 +334,13 @@ const SearchPage: React.FC = () => {
 
     console.log("🧹 Limpando dados da busca...");
 
+    // Preservar searchId se ainda há resultados
+    const currentSearchId =
+      searchStatus.searchId || localStorage.getItem("searchId") || undefined;
+
     // Limpar status da busca
     const emptyStatus = {
+      searchId: currentSearchId, // Preservar searchId
       running: false,
       phase: "",
       progress: 0,
@@ -336,12 +358,16 @@ const SearchPage: React.FC = () => {
     setNicho("");
     setCidade("");
 
-    // Limpar localStorage
+    // Limpar localStorage mas preservar searchId
     localStorage.removeItem("searchStatus");
     localStorage.removeItem("lastNicho");
     localStorage.removeItem("lastCidade");
+    // NÃO remover searchId do localStorage
 
-    console.log("✅ Dados da busca limpos com sucesso");
+    console.log(
+      "✅ Dados da busca limpos com sucesso, searchId preservado:",
+      currentSearchId
+    );
   };
 
   return (

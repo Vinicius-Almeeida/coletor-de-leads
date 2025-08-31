@@ -142,7 +142,7 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
       searchId,
       running: true,
       phase: "Iniciando busca...",
-      progress: 0,
+      progress: 0.00,
       total: 0,
       found: 0,
       current_item: "",
@@ -272,7 +272,7 @@ app.get("/api/dashboard-data", (req, res) => {
   for (const [searchId, searchStatus] of activeSearches.entries()) {
     if (searchStatus.results && searchStatus.results.length > 0) {
       dashboardData.total_leads += searchStatus.results.length;
-      
+
       const nicho = searchStatus.current_nicho || "Geral";
       if (!dashboardData.segments[nicho]) {
         dashboardData.segments[nicho] = 0;
@@ -284,7 +284,7 @@ app.get("/api/dashboard-data", (req, res) => {
   // Adicionar dados do cache global (para compatibilidade)
   Object.entries(searchCache).forEach(([cacheKey, companies]) => {
     dashboardData.total_leads += companies.length;
-    
+
     const nicho = cacheKey.split("_")[0] || "Geral";
     if (!dashboardData.segments[nicho]) {
       dashboardData.segments[nicho] = 0;
@@ -329,8 +329,8 @@ app.get("/api/whatsapp-leads", (req, res) => {
   });
 
   // Remover duplicatas baseado no nome da empresa
-  const uniqueLeads = allWhatsappLeads.filter((lead, index, self) => 
-    index === self.findIndex(l => l.nome === lead.nome)
+  const uniqueLeads = allWhatsappLeads.filter(
+    (lead, index, self) => index === self.findIndex((l) => l.nome === lead.nome)
   );
 
   res.json({
@@ -374,8 +374,9 @@ app.get("/api/download-whatsapp-leads", async (req, res) => {
     });
 
     // Remover duplicatas baseado no nome da empresa
-    const uniqueLeads = allWhatsappLeads.filter((lead, index, self) => 
-      index === self.findIndex(l => l.nome === lead.nome)
+    const uniqueLeads = allWhatsappLeads.filter(
+      (lead, index, self) =>
+        index === self.findIndex((l) => l.nome === lead.nome)
     );
 
     if (uniqueLeads.length === 0) {
@@ -425,7 +426,7 @@ async function realSearch(searchId, nicho, cidade) {
     );
 
     searchStatus.phase = "Fase 1: Buscando empresas via Google Places API";
-    searchStatus.progress = 10;
+    searchStatus.progress = 10.00;
 
     // Buscar empresas via Google Places API
     const businesses = await searchGooglePlaces(nicho, cidade);
@@ -456,14 +457,14 @@ async function realSearch(searchId, nicho, cidade) {
     if (newBusinesses.length === 0) {
       searchStatus.phase = "Todas as empresas já foram coletadas anteriormente";
       searchStatus.results = existingCompanies;
-      searchStatus.progress = 100;
+      searchStatus.progress = 100.00;
       searchStatus.running = false;
       activeSearches.set(searchId, searchStatus);
       return;
     }
 
     searchStatus.total = Math.min(newBusinesses.length, 50);
-    searchStatus.progress = 30;
+    searchStatus.progress = 30.00;
     searchStatus.phase = `Fase 2: Enriquecendo dados de ${Math.min(
       newBusinesses.length,
       50
@@ -483,7 +484,7 @@ async function realSearch(searchId, nicho, cidade) {
 
       const business = newBusinesses[i];
       searchStatus.current_item = business.nome || "Empresa";
-      searchStatus.progress = 30 + (i / maxBusinesses) * 60;
+      searchStatus.progress = Math.round((30 + (i / maxBusinesses) * 60) * 100) / 100;
 
       console.log(
         `🔍 [${searchId}] Processando ${i + 1}/${maxBusinesses}: ${
@@ -510,7 +511,7 @@ async function realSearch(searchId, nicho, cidade) {
 
     // Atualizar resultados
     searchStatus.results = allResults;
-    searchStatus.progress = 100;
+    searchStatus.progress = 100.00;
     searchStatus.phase = `Busca concluída! ${enrichedResults.length} novas empresas adicionadas`;
 
     // Atualizar estatísticas globais
@@ -523,12 +524,19 @@ async function realSearch(searchId, nicho, cidade) {
       `✅ Busca ${searchId} concluída com ${enrichedResults.length} novas empresas`
     );
   } catch (error) {
-    searchStatus.phase = `Erro na busca: ${error.message}`;
+    const searchStatus = activeSearches.get(searchId);
+    if (searchStatus) {
+      searchStatus.phase = `Erro na busca: ${error.message}`;
+      searchStatus.running = false;
+      activeSearches.set(searchId, searchStatus);
+    }
     console.error(`❌ Erro na busca ${searchId}:`, error);
-    activeSearches.set(searchId, searchStatus);
   } finally {
-    searchStatus.running = false;
-    activeSearches.set(searchId, searchStatus);
+    const searchStatus = activeSearches.get(searchId);
+    if (searchStatus) {
+      searchStatus.running = false;
+      activeSearches.set(searchId, searchStatus);
+    }
   }
 }
 
