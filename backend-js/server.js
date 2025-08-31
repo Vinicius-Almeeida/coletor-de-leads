@@ -243,8 +243,10 @@ async function realSearch(nicho, cidade) {
     // Criar chave do cache
     const cacheKey = `${nicho.toLowerCase()}_${cidade.toLowerCase()}`;
     const existingCompanies = searchCache[cacheKey] || [];
-    
-    console.log(`📋 Cache encontrado para "${cacheKey}": ${existingCompanies.length} empresas já coletadas`);
+
+    console.log(
+      `📋 Cache encontrado para "${cacheKey}": ${existingCompanies.length} empresas já coletadas`
+    );
 
     searchStatus.phase = "Fase 1: Buscando empresas via Google Places API";
     searchStatus.progress = 10;
@@ -259,17 +261,20 @@ async function realSearch(nicho, cidade) {
     }
 
     // Filtrar empresas já coletadas
-    const newBusinesses = businesses.filter(business => {
+    const newBusinesses = businesses.filter((business) => {
       const businessName = business.nome?.toLowerCase() || "";
       const businessPhone = business.telefone || "";
-      
-      return !existingCompanies.some(existing => 
-        existing.nome?.toLowerCase() === businessName ||
-        existing.telefone === businessPhone
+
+      return !existingCompanies.some(
+        (existing) =>
+          existing.nome?.toLowerCase() === businessName ||
+          existing.telefone === businessPhone
       );
     });
 
-    console.log(`🔍 Empresas encontradas: ${businesses.length}, Novas: ${newBusinesses.length}`);
+    console.log(
+      `🔍 Empresas encontradas: ${businesses.length}, Novas: ${newBusinesses.length}`
+    );
 
     if (newBusinesses.length === 0) {
       searchStatus.phase = "Todas as empresas já foram coletadas anteriormente";
@@ -310,16 +315,16 @@ async function realSearch(nicho, cidade) {
       searchStatus.found = enrichedResults.length;
       searchStatus.elapsed_time = Date.now();
 
-      // Pequena pausa para não sobrecarregar
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Pequena pausa para não sobrecarregar (reduzida)
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
     // Combinar resultados existentes com novos
     const allResults = [...existingCompanies, ...enrichedResults];
-    
+
     // Atualizar cache
     searchCache[cacheKey] = allResults;
-    
+
     // Atualizar resultados
     searchStatus.results = allResults;
     searchStatus.progress = 100;
