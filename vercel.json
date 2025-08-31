@@ -2,50 +2,17 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend-js/server.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb",
-        "includeFiles": [
-          "backend-js/services/**",
-          "backend-js/middleware/**",
-          "backend-js/.env"
-        ]
-      }
-    },
-    {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build",
-        "buildCommand": "npm run build",
-        "installCommand": "npm ci"
+        "distDir": "build"
       }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/backend-js/server.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "functions": {
-    "backend-js/server.js": {
-      "maxDuration": 30
-    }
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  },
-  "regions": ["gru1"],
-  "concurrency": {
-    "builds": 2,
-    "functions": 10
-  }
+  ]
 }

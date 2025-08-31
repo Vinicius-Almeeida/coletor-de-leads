@@ -31,7 +31,7 @@ git push -u origin main
 
 Vá em **Settings > Secrets and variables > Actions** e adicione:
 
-- `GOOGLE_PLACES_API_KEY`: `AIzaSyDZuvIx3XZxNhkzIWv6OjKmdrw6aDbm_Rk`
+- `GOOGLE_PLACES_API_KEY`: `[SUA_CHAVE_AQUI]`
 - `VERCEL_TOKEN`: Token do Vercel
 - `VERCEL_ORG_ID`: ID da organização no Vercel
 - `VERCEL_PROJECT_ID`: ID do projeto backend no Vercel
@@ -63,7 +63,7 @@ Vá em **Settings > Secrets and variables > Actions** e adicione:
 
 **Backend:**
 
-- `GOOGLE_PLACES_API_KEY`: `AIzaSyDZuvIx3XZxNhkzIWv6OjKmdrw6aDbm_Rk`
+- `GOOGLE_PLACES_API_KEY`: `[SUA_CHAVE_AQUI]`
 - `PORT`: `3001`
 
 **Frontend:**
