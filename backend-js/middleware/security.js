@@ -22,7 +22,7 @@ const searchLimiter = rateLimit({
 // Rate limiting específico para status (mais permissivo)
 const statusLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 200, // máximo 200 verificações de status por minuto
+  max: 1000, // máximo 1000 verificações de status por minuto
   message: "Muitas verificações de status, aguarde um momento",
 });
 
