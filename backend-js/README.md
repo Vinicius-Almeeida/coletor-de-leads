@@ -128,8 +128,6 @@ PUPPETEER_HEADLESS=true
 2. Configure as variáveis de ambiente
 3. Deploy automático
 
-
-
 ### Heroku
 
 1. Crie um app no Heroku
