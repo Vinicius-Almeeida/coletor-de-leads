@@ -76,7 +76,7 @@ function generateSearchId() {
 
 // Limpar buscas antigas (mais de 1 hora)
 function cleanupOldSearches() {
-  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
   for (const [searchId, searchStatus] of activeSearches.entries()) {
     if (searchStatus.timestamp < oneHourAgo) {
       activeSearches.delete(searchId);
@@ -108,9 +108,15 @@ app.get("/api/test", (req, res) => {
     origin: req.headers["origin"] || "Unknown",
     host: req.headers["host"] || "Unknown",
     cors_headers: {
-      "Access-Control-Allow-Origin": res.getHeader("Access-Control-Allow-Origin"),
-      "Access-Control-Allow-Methods": res.getHeader("Access-Control-Allow-Methods"),
-      "Access-Control-Allow-Headers": res.getHeader("Access-Control-Allow-Headers"),
+      "Access-Control-Allow-Origin": res.getHeader(
+        "Access-Control-Allow-Origin"
+      ),
+      "Access-Control-Allow-Methods": res.getHeader(
+        "Access-Control-Allow-Methods"
+      ),
+      "Access-Control-Allow-Headers": res.getHeader(
+        "Access-Control-Allow-Headers"
+      ),
     },
     active_searches: activeSearches.size,
   });
@@ -130,7 +136,7 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
 
     // Gerar ID único para esta busca
     const searchId = generateSearchId();
-    
+
     // Criar status único para esta busca
     const searchStatus = {
       searchId,
@@ -156,10 +162,10 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
     realSearch(searchId, nicho, cidade);
 
     console.log("🚀 Busca iniciada");
-    res.json({ 
-      message: "Busca iniciada", 
+    res.json({
+      message: "Busca iniciada",
       status: "running",
-      searchId: searchId 
+      searchId: searchId,
     });
   } catch (error) {
     console.error("❌ Erro ao iniciar busca:", error);
@@ -169,21 +175,21 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
 
 app.get("/api/status", statusLimiter, (req, res) => {
   const { searchId } = req.query;
-  
+
   if (!searchId) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: "searchId é obrigatório",
-      activeSearches: Array.from(activeSearches.keys())
+      activeSearches: Array.from(activeSearches.keys()),
     });
   }
 
   const searchStatus = activeSearches.get(searchId);
-  
+
   if (!searchStatus) {
-    return res.status(404).json({ 
+    return res.status(404).json({
       error: "Busca não encontrada",
       searchId: searchId,
-      activeSearches: Array.from(activeSearches.keys())
+      activeSearches: Array.from(activeSearches.keys()),
     });
   }
 
@@ -192,7 +198,7 @@ app.get("/api/status", statusLimiter, (req, res) => {
 
 app.post("/api/stop", (req, res) => {
   const { searchId } = req.body;
-  
+
   if (!searchId) {
     return res.status(400).json({ error: "searchId é obrigatório" });
   }
@@ -200,7 +206,7 @@ app.post("/api/stop", (req, res) => {
   console.log(`⏹️ Parando busca ${searchId}...`);
 
   const searchStatus = activeSearches.get(searchId);
-  
+
   if (!searchStatus) {
     return res.status(404).json({ error: "Busca não encontrada" });
   }
@@ -215,20 +221,20 @@ app.post("/api/stop", (req, res) => {
     message: "Busca interrompida",
     status: "stopped",
     phase: searchStatus.phase,
-    searchId: searchId
+    searchId: searchId,
   });
 });
 
 app.get("/api/download", async (req, res) => {
   try {
     const { searchId } = req.query;
-    
+
     if (!searchId) {
       return res.status(400).json({ error: "searchId é obrigatório" });
     }
 
     const searchStatus = activeSearches.get(searchId);
-    
+
     if (!searchStatus) {
       return res.status(404).json({ error: "Busca não encontrada" });
     }
@@ -255,13 +261,60 @@ app.get("/api/download", async (req, res) => {
 });
 
 app.get("/api/dashboard-data", (req, res) => {
-  res.json(allSearches);
+  // Calcular estatísticas em tempo real
+  const dashboardData = {
+    searches: allSearches.searches,
+    total_leads: 0,
+    segments: {},
+  };
+
+  // Calcular total de leads de todas as buscas ativas
+  for (const [searchId, searchStatus] of activeSearches.entries()) {
+    if (searchStatus.results && searchStatus.results.length > 0) {
+      dashboardData.total_leads += searchStatus.results.length;
+      
+      const nicho = searchStatus.current_nicho || "Geral";
+      if (!dashboardData.segments[nicho]) {
+        dashboardData.segments[nicho] = 0;
+      }
+      dashboardData.segments[nicho] += searchStatus.results.length;
+    }
+  }
+
+  // Adicionar dados do cache global (para compatibilidade)
+  Object.entries(searchCache).forEach(([cacheKey, companies]) => {
+    dashboardData.total_leads += companies.length;
+    
+    const nicho = cacheKey.split("_")[0] || "Geral";
+    if (!dashboardData.segments[nicho]) {
+      dashboardData.segments[nicho] = 0;
+    }
+    dashboardData.segments[nicho] += companies.length;
+  });
+
+  res.json(dashboardData);
 });
 
 app.get("/api/whatsapp-leads", (req, res) => {
-  // Coletar todos os leads com WhatsApp de todas as buscas no cache
+  // Coletar todos os leads com WhatsApp de todas as buscas ativas e cache
   let allWhatsappLeads = [];
 
+  // Buscar leads com WhatsApp das buscas ativas
+  for (const [searchId, searchStatus] of activeSearches.entries()) {
+    if (searchStatus.results && searchStatus.results.length > 0) {
+      const whatsappLeads = searchStatus.results
+        .filter((lead) => lead.whatsapp)
+        .map((lead) => ({
+          ...lead,
+          empresa: lead.nome,
+          segmento: searchStatus.current_nicho || "Geral",
+        }));
+
+      allWhatsappLeads = [...allWhatsappLeads, ...whatsappLeads];
+    }
+  }
+
+  // Buscar leads com WhatsApp do cache global (para compatibilidade)
   Object.entries(searchCache).forEach(([cacheKey, companies]) => {
     const nicho = cacheKey.split("_")[0]; // Extrair nicho da chave do cache
     const whatsappLeads = companies
@@ -275,17 +328,38 @@ app.get("/api/whatsapp-leads", (req, res) => {
     allWhatsappLeads = [...allWhatsappLeads, ...whatsappLeads];
   });
 
+  // Remover duplicatas baseado no nome da empresa
+  const uniqueLeads = allWhatsappLeads.filter((lead, index, self) => 
+    index === self.findIndex(l => l.nome === lead.nome)
+  );
+
   res.json({
-    total_whatsapp_leads: allWhatsappLeads.length,
-    leads: allWhatsappLeads,
+    total_whatsapp_leads: uniqueLeads.length,
+    leads: uniqueLeads,
   });
 });
 
 app.get("/api/download-whatsapp-leads", async (req, res) => {
   try {
-    // Coletar todos os leads com WhatsApp de todas as buscas no cache
+    // Coletar todos os leads com WhatsApp de todas as buscas ativas e cache
     let allWhatsappLeads = [];
 
+    // Buscar leads com WhatsApp das buscas ativas
+    for (const [searchId, searchStatus] of activeSearches.entries()) {
+      if (searchStatus.results && searchStatus.results.length > 0) {
+        const whatsappLeads = searchStatus.results
+          .filter((lead) => lead.whatsapp)
+          .map((lead) => ({
+            ...lead,
+            empresa: lead.nome,
+            segmento: searchStatus.current_nicho || "Geral",
+          }));
+
+        allWhatsappLeads = [...allWhatsappLeads, ...whatsappLeads];
+      }
+    }
+
+    // Buscar leads com WhatsApp do cache global (para compatibilidade)
     Object.entries(searchCache).forEach(([cacheKey, companies]) => {
       const nicho = cacheKey.split("_")[0]; // Extrair nicho da chave do cache
       const whatsappLeads = companies
@@ -299,13 +373,18 @@ app.get("/api/download-whatsapp-leads", async (req, res) => {
       allWhatsappLeads = [...allWhatsappLeads, ...whatsappLeads];
     });
 
-    if (allWhatsappLeads.length === 0) {
+    // Remover duplicatas baseado no nome da empresa
+    const uniqueLeads = allWhatsappLeads.filter((lead, index, self) => 
+      index === self.findIndex(l => l.nome === lead.nome)
+    );
+
+    if (uniqueLeads.length === 0) {
       return res
         .status(400)
         .json({ error: "Nenhum lead com WhatsApp encontrado" });
     }
 
-    const buffer = await generateExcelFile(allWhatsappLeads, "whatsapp_leads");
+    const buffer = await generateExcelFile(uniqueLeads, "whatsapp_leads");
 
     res.setHeader(
       "Content-Type",
@@ -436,11 +515,13 @@ async function realSearch(searchId, nicho, cidade) {
 
     // Atualizar estatísticas globais
     updateGlobalStatistics(nicho, enrichedResults);
-    
+
     // Atualizar busca ativa
     activeSearches.set(searchId, searchStatus);
-    
-    console.log(`✅ Busca ${searchId} concluída com ${enrichedResults.length} novas empresas`);
+
+    console.log(
+      `✅ Busca ${searchId} concluída com ${enrichedResults.length} novas empresas`
+    );
   } catch (error) {
     searchStatus.phase = `Erro na busca: ${error.message}`;
     console.error(`❌ Erro na busca ${searchId}:`, error);

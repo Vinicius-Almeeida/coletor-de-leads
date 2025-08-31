@@ -288,7 +288,12 @@ const SearchPage: React.FC = () => {
   };
 
   const downloadResults = () => {
-    window.location.href = API_ENDPOINTS.DOWNLOAD;
+    const searchId = searchStatus.searchId || localStorage.getItem("searchId");
+    if (!searchId) {
+      alert("Erro: ID da busca não encontrado. Tente fazer uma nova busca.");
+      return;
+    }
+    window.location.href = `${API_ENDPOINTS.DOWNLOAD}?searchId=${searchId}`;
   };
 
   const clearInputs = () => {
