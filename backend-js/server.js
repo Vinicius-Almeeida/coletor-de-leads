@@ -191,31 +191,53 @@ app.get("/api/dashboard-data", (req, res) => {
 });
 
 app.get("/api/whatsapp-leads", (req, res) => {
-  const whatsappLeads = searchStatus.results
-    .filter((lead) => lead.whatsapp)
-    .map((lead) => ({
-      ...lead,
-      empresa: lead.nome,
-      segmento: searchStatus.current_nicho || "Geral",
-    }));
+  // Coletar todos os leads com WhatsApp de todas as buscas no cache
+  let allWhatsappLeads = [];
+  
+  Object.entries(searchCache).forEach(([cacheKey, companies]) => {
+    const nicho = cacheKey.split('_')[0]; // Extrair nicho da chave do cache
+    const whatsappLeads = companies
+      .filter((lead) => lead.whatsapp)
+      .map((lead) => ({
+        ...lead,
+        empresa: lead.nome,
+        segmento: nicho || "Geral",
+      }));
+    
+    allWhatsappLeads = [...allWhatsappLeads, ...whatsappLeads];
+  });
 
   res.json({
-    total_whatsapp_leads: whatsappLeads.length,
-    leads: whatsappLeads,
+    total_whatsapp_leads: allWhatsappLeads.length,
+    leads: allWhatsappLeads,
   });
 });
 
 app.get("/api/download-whatsapp-leads", async (req, res) => {
   try {
-    const whatsappLeads = searchStatus.results.filter((lead) => lead.whatsapp);
+    // Coletar todos os leads com WhatsApp de todas as buscas no cache
+    let allWhatsappLeads = [];
+    
+    Object.entries(searchCache).forEach(([cacheKey, companies]) => {
+      const nicho = cacheKey.split('_')[0]; // Extrair nicho da chave do cache
+      const whatsappLeads = companies
+        .filter((lead) => lead.whatsapp)
+        .map((lead) => ({
+          ...lead,
+          empresa: lead.nome,
+          segmento: nicho || "Geral",
+        }));
+      
+      allWhatsappLeads = [...allWhatsappLeads, ...whatsappLeads];
+    });
 
-    if (whatsappLeads.length === 0) {
+    if (allWhatsappLeads.length === 0) {
       return res
         .status(400)
         .json({ error: "Nenhum lead com WhatsApp encontrado" });
     }
 
-    const buffer = await generateExcelFile(whatsappLeads, "whatsapp_leads");
+    const buffer = await generateExcelFile(allWhatsappLeads, "whatsapp_leads");
 
     res.setHeader(
       "Content-Type",
