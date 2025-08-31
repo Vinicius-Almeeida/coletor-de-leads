@@ -284,13 +284,15 @@ async function realSearch(nicho, cidade) {
       return;
     }
 
-    searchStatus.total = newBusinesses.length;
+    searchStatus.total = Math.min(newBusinesses.length, 20);
     searchStatus.progress = 30;
-    searchStatus.phase = `Fase 2: Enriquecendo dados de ${newBusinesses.length} novas empresas`;
+    searchStatus.phase = `Fase 2: Enriquecendo dados de ${Math.min(newBusinesses.length, 20)} empresas (limitado para velocidade)`;
 
-    // Enriquecer dados com scraping
+    // Enriquecer dados com scraping (limitado a 20 empresas para velocidade)
     const enrichedResults = [];
-    for (let i = 0; i < newBusinesses.length; i++) {
+    const maxBusinesses = Math.min(newBusinesses.length, 20);
+    
+    for (let i = 0; i < maxBusinesses; i++) {
       // Verificar se a busca foi interrompida
       if (!searchStatus.running) {
         console.log("⏹️ Busca interrompida durante o scraping");
@@ -300,10 +302,10 @@ async function realSearch(nicho, cidade) {
 
       const business = newBusinesses[i];
       searchStatus.current_item = business.nome || "Empresa";
-      searchStatus.progress = 30 + (i / newBusinesses.length) * 60;
+      searchStatus.progress = 30 + (i / maxBusinesses) * 60;
 
       console.log(
-        `🔍 Processando ${i + 1}/${newBusinesses.length}: ${
+        `🔍 Processando ${i + 1}/${maxBusinesses}: ${
           business.nome || "Empresa"
         }`
       );
@@ -315,8 +317,8 @@ async function realSearch(nicho, cidade) {
       searchStatus.found = enrichedResults.length;
       searchStatus.elapsed_time = Date.now();
 
-      // Pequena pausa para não sobrecarregar (reduzida)
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Pausa mínima para não sobrecarregar
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
     // Combinar resultados existentes com novos
