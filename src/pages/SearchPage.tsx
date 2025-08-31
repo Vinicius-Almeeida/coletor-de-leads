@@ -260,7 +260,7 @@ const SearchPage: React.FC = () => {
         clearInterval(interval);
         setIsSearching(false);
       }
-    }, 1000);
+    }, 2000); // Aumentado para 2 segundos para reduzir requisições
   };
 
   const downloadResults = () => {

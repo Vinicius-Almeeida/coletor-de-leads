@@ -15,8 +15,15 @@ const limiter = rateLimit({
 // Rate limiting específico para busca
 const searchLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 5, // máximo 5 buscas por minuto
+  max: 50, // máximo 50 buscas por minuto
   message: "Muitas buscas, aguarde um momento",
+});
+
+// Rate limiting específico para status (mais permissivo)
+const statusLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 200, // máximo 200 verificações de status por minuto
+  message: "Muitas verificações de status, aguarde um momento",
 });
 
 // Sanitização de input
@@ -71,6 +78,7 @@ function validateInput(req, res, next) {
 module.exports = {
   limiter,
   searchLimiter,
+  statusLimiter,
   sanitizeInput,
   isValidEmail,
   isValidUrl,

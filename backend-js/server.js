@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const {
   limiter,
   searchLimiter,
+  statusLimiter,
   validateInput,
 } = require("./middleware/security");
 const { searchGooglePlaces } = require("./services/googlePlaces");
@@ -18,7 +19,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Security middleware
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(limiter);
 
 // CORS
@@ -132,7 +138,7 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
   }
 });
 
-app.get("/api/status", (req, res) => {
+app.get("/api/status", statusLimiter, (req, res) => {
   res.json(searchStatus);
 });
 
