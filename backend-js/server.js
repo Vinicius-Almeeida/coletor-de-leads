@@ -80,6 +80,11 @@ let allSearches = {
   segments: {},
 };
 
+// Cache para evitar duplicatas por nicho/cidade
+let searchCache = {
+  // Formato: "nicho_cidade" => [empresas já coletadas]
+};
+
 // Endpoints
 app.get("/api/health", (req, res) => {
   res.json({
@@ -235,6 +240,12 @@ async function realSearch(nicho, cidade) {
       return;
     }
 
+    // Criar chave do cache
+    const cacheKey = `${nicho.toLowerCase()}_${cidade.toLowerCase()}`;
+    const existingCompanies = searchCache[cacheKey] || [];
+    
+    console.log(`📋 Cache encontrado para "${cacheKey}": ${existingCompanies.length} empresas já coletadas`);
+
     searchStatus.phase = "Fase 1: Buscando empresas via Google Places API";
     searchStatus.progress = 10;
 
@@ -247,13 +258,34 @@ async function realSearch(nicho, cidade) {
       return;
     }
 
-    searchStatus.total = businesses.length;
+    // Filtrar empresas já coletadas
+    const newBusinesses = businesses.filter(business => {
+      const businessName = business.nome?.toLowerCase() || "";
+      const businessPhone = business.telefone || "";
+      
+      return !existingCompanies.some(existing => 
+        existing.nome?.toLowerCase() === businessName ||
+        existing.telefone === businessPhone
+      );
+    });
+
+    console.log(`🔍 Empresas encontradas: ${businesses.length}, Novas: ${newBusinesses.length}`);
+
+    if (newBusinesses.length === 0) {
+      searchStatus.phase = "Todas as empresas já foram coletadas anteriormente";
+      searchStatus.results = existingCompanies;
+      searchStatus.progress = 100;
+      searchStatus.running = false;
+      return;
+    }
+
+    searchStatus.total = newBusinesses.length;
     searchStatus.progress = 30;
-    searchStatus.phase = `Fase 2: Enriquecendo dados de ${businesses.length} empresas`;
+    searchStatus.phase = `Fase 2: Enriquecendo dados de ${newBusinesses.length} novas empresas`;
 
     // Enriquecer dados com scraping
     const enrichedResults = [];
-    for (let i = 0; i < businesses.length; i++) {
+    for (let i = 0; i < newBusinesses.length; i++) {
       // Verificar se a busca foi interrompida
       if (!searchStatus.running) {
         console.log("⏹️ Busca interrompida durante o scraping");
@@ -261,12 +293,12 @@ async function realSearch(nicho, cidade) {
         break;
       }
 
-      const business = businesses[i];
+      const business = newBusinesses[i];
       searchStatus.current_item = business.nome || "Empresa";
-      searchStatus.progress = 30 + (i / businesses.length) * 60;
+      searchStatus.progress = 30 + (i / newBusinesses.length) * 60;
 
       console.log(
-        `🔍 Processando ${i + 1}/${businesses.length}: ${
+        `🔍 Processando ${i + 1}/${newBusinesses.length}: ${
           business.nome || "Empresa"
         }`
       );
@@ -282,10 +314,16 @@ async function realSearch(nicho, cidade) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
+    // Combinar resultados existentes com novos
+    const allResults = [...existingCompanies, ...enrichedResults];
+    
+    // Atualizar cache
+    searchCache[cacheKey] = allResults;
+    
     // Atualizar resultados
-    searchStatus.results = enrichedResults;
+    searchStatus.results = allResults;
     searchStatus.progress = 100;
-    searchStatus.phase = "Busca concluída com sucesso!";
+    searchStatus.phase = `Busca concluída! ${enrichedResults.length} novas empresas adicionadas`;
 
     // Atualizar estatísticas globais
     updateGlobalStatistics(nicho, enrichedResults);

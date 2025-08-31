@@ -6,7 +6,7 @@ const hpp = require("hpp");
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requests por IP
+  max: 1000, // máximo 1000 requests por IP (aumentado)
   message: "Muitas requisições deste IP, tente novamente em 15 minutos",
   standardHeaders: true,
   legacyHeaders: false,
@@ -22,7 +22,7 @@ const searchLimiter = rateLimit({
 // Rate limiting específico para status (mais permissivo)
 const statusLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 1000, // máximo 1000 verificações de status por minuto
+  max: 5000, // máximo 5000 verificações de status por minuto (muito permissivo)
   message: "Muitas verificações de status, aguarde um momento",
 });
 
