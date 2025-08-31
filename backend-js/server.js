@@ -60,30 +60,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// Variáveis globais para status
-let searchStatus = {
-  running: false,
-  phase: "",
-  progress: 0,
-  total: 0,
-  found: 0,
-  current_item: "",
-  elapsed_time: 0,
-  results: [],
-  current_nicho: "",
-};
-
-// Armazenamento de todas as buscas realizadas
-let allSearches = {
+// Sistema multi-usuário
+const activeSearches = new Map(); // searchId -> searchStatus
+const searchCache = {}; // Cache global compartilhado
+const allSearches = {
   searches: [],
   total_leads: 0,
   segments: {},
 };
 
-// Cache para evitar duplicatas por nicho/cidade
-let searchCache = {
-  // Formato: "nicho_cidade" => [empresas já coletadas]
-};
+// Gerar ID único para busca
+function generateSearchId() {
+  return `search_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Limpar buscas antigas (mais de 1 hora)
+function cleanupOldSearches() {
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  for (const [searchId, searchStatus] of activeSearches.entries()) {
+    if (searchStatus.timestamp < oneHourAgo) {
+      activeSearches.delete(searchId);
+      console.log(`🧹 Busca antiga removida: ${searchId}`);
+    }
+  }
+}
+
+// Limpar buscas antigas a cada 30 minutos
+setInterval(cleanupOldSearches, 30 * 60 * 1000);
+
+// Remover variáveis globais antigas - agora usando sistema multi-usuário
 
 // Endpoints
 app.get("/api/health", (req, res) => {
@@ -117,8 +122,12 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
       return res.status(400).json({ error: "Nicho e cidade são obrigatórios" });
     }
 
-    // Reset status
-    searchStatus = {
+    // Gerar ID único para esta busca
+    const searchId = generateSearchId();
+    
+    // Criar status único para esta busca
+    const searchStatus = {
+      searchId,
       running: true,
       phase: "Iniciando busca...",
       progress: 0,
@@ -128,15 +137,24 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
       elapsed_time: 0,
       results: [],
       current_nicho: nicho,
+      timestamp: Date.now(),
     };
 
-    console.log("✅ Status resetado, iniciando busca");
+    // Armazenar busca ativa
+    activeSearches.set(searchId, searchStatus);
+
+    console.log(`✅ Busca ${searchId} iniciada para: ${nicho} em ${cidade}`);
+    console.log(`📊 Buscas ativas: ${activeSearches.size}`);
 
     // Executar busca em background
-    realSearch(nicho, cidade);
+    realSearch(searchId, nicho, cidade);
 
     console.log("🚀 Busca iniciada");
-    res.json({ message: "Busca iniciada", status: "running" });
+    res.json({ 
+      message: "Busca iniciada", 
+      status: "running",
+      searchId: searchId 
+    });
   } catch (error) {
     console.error("❌ Erro ao iniciar busca:", error);
     res.status(500).json({ error: error.message });
@@ -144,27 +162,71 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
 });
 
 app.get("/api/status", statusLimiter, (req, res) => {
+  const { searchId } = req.query;
+  
+  if (!searchId) {
+    return res.status(400).json({ 
+      error: "searchId é obrigatório",
+      activeSearches: Array.from(activeSearches.keys())
+    });
+  }
+
+  const searchStatus = activeSearches.get(searchId);
+  
+  if (!searchStatus) {
+    return res.status(404).json({ 
+      error: "Busca não encontrada",
+      searchId: searchId,
+      activeSearches: Array.from(activeSearches.keys())
+    });
+  }
+
   res.json(searchStatus);
 });
 
 app.post("/api/stop", (req, res) => {
-  console.log("⏹️ Parando busca atual...");
+  const { searchId } = req.body;
+  
+  if (!searchId) {
+    return res.status(400).json({ error: "searchId é obrigatório" });
+  }
+
+  console.log(`⏹️ Parando busca ${searchId}...`);
+
+  const searchStatus = activeSearches.get(searchId);
+  
+  if (!searchStatus) {
+    return res.status(404).json({ error: "Busca não encontrada" });
+  }
 
   searchStatus.running = false;
   searchStatus.phase = "Busca interrompida pelo usuário";
   searchStatus.progress = 0;
 
-  console.log("✅ Busca interrompida com sucesso");
+  console.log(`✅ Busca ${searchId} interrompida com sucesso`);
 
   res.json({
     message: "Busca interrompida",
     status: "stopped",
     phase: searchStatus.phase,
+    searchId: searchId
   });
 });
 
 app.get("/api/download", async (req, res) => {
   try {
+    const { searchId } = req.query;
+    
+    if (!searchId) {
+      return res.status(400).json({ error: "searchId é obrigatório" });
+    }
+
+    const searchStatus = activeSearches.get(searchId);
+    
+    if (!searchStatus) {
+      return res.status(404).json({ error: "Busca não encontrada" });
+    }
+
     if (!searchStatus.results || searchStatus.results.length === 0) {
       return res.status(400).json({ error: "Nenhum resultado para download" });
     }
@@ -177,7 +239,7 @@ app.get("/api/download", async (req, res) => {
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=leads_${Date.now()}.xlsx`
+      `attachment; filename=leads_${searchId}_${Date.now()}.xlsx`
     );
     res.send(buffer);
   } catch (error) {
@@ -254,11 +316,18 @@ app.get("/api/download-whatsapp-leads", async (req, res) => {
 });
 
 // Função principal de busca
-async function realSearch(nicho, cidade) {
+async function realSearch(searchId, nicho, cidade) {
   try {
+    const searchStatus = activeSearches.get(searchId);
+    if (!searchStatus) {
+      console.log(`❌ Busca ${searchId} não encontrada`);
+      return;
+    }
+
     if (!process.env.GOOGLE_PLACES_API_KEY) {
       searchStatus.phase = "Erro: Chave da API do Google não configurada";
       searchStatus.running = false;
+      activeSearches.set(searchId, searchStatus);
       return;
     }
 
@@ -279,6 +348,7 @@ async function realSearch(nicho, cidade) {
     if (!businesses || businesses.length === 0) {
       searchStatus.phase = "Nenhuma empresa encontrada";
       searchStatus.running = false;
+      activeSearches.set(searchId, searchStatus);
       return;
     }
 
@@ -303,6 +373,7 @@ async function realSearch(nicho, cidade) {
       searchStatus.results = existingCompanies;
       searchStatus.progress = 100;
       searchStatus.running = false;
+      activeSearches.set(searchId, searchStatus);
       return;
     }
 
@@ -320,7 +391,7 @@ async function realSearch(nicho, cidade) {
     for (let i = 0; i < maxBusinesses; i++) {
       // Verificar se a busca foi interrompida
       if (!searchStatus.running) {
-        console.log("⏹️ Busca interrompida durante o scraping");
+        console.log(`⏹️ Busca ${searchId} interrompida durante o scraping`);
         searchStatus.phase = "Busca interrompida pelo usuário";
         break;
       }
@@ -330,7 +401,7 @@ async function realSearch(nicho, cidade) {
       searchStatus.progress = 30 + (i / maxBusinesses) * 60;
 
       console.log(
-        `🔍 Processando ${i + 1}/${maxBusinesses}: ${
+        `🔍 [${searchId}] Processando ${i + 1}/${maxBusinesses}: ${
           business.nome || "Empresa"
         }`
       );
@@ -359,11 +430,18 @@ async function realSearch(nicho, cidade) {
 
     // Atualizar estatísticas globais
     updateGlobalStatistics(nicho, enrichedResults);
+    
+    // Atualizar busca ativa
+    activeSearches.set(searchId, searchStatus);
+    
+    console.log(`✅ Busca ${searchId} concluída com ${enrichedResults.length} novas empresas`);
   } catch (error) {
     searchStatus.phase = `Erro na busca: ${error.message}`;
-    console.error("❌ Erro na busca real:", error);
+    console.error(`❌ Erro na busca ${searchId}:`, error);
+    activeSearches.set(searchId, searchStatus);
   } finally {
     searchStatus.running = false;
+    activeSearches.set(searchId, searchStatus);
   }
 }
 
@@ -389,5 +467,4 @@ function updateGlobalStatistics(nicho, results) {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend rodando em: http://localhost:${PORT}`);
-  console.log(`📱 API Health: http://localhost:${PORT}/api/health`);
-});
+  console.log(`

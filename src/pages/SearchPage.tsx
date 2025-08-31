@@ -3,6 +3,7 @@ import Navigation from "../components/Navigation";
 import { API_ENDPOINTS } from "../config";
 
 interface SearchStatus {
+  searchId?: string;
   running: boolean;
   phase: string;
   progress: number;
@@ -26,6 +27,7 @@ const SearchPage: React.FC = () => {
     return saved
       ? JSON.parse(saved)
       : {
+          searchId: "",
           running: false,
           phase: "",
           progress: 0,
@@ -43,13 +45,19 @@ const SearchPage: React.FC = () => {
   useEffect(() => {
     const loadBackendData = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.STATUS);
-        const status = await response.json();
-
-        // Só atualizar se o backend tiver dados mais recentes
-        if (status.results && status.results.length > 0) {
-          setSearchStatus(status);
-          localStorage.setItem("searchStatus", JSON.stringify(status));
+        // Se temos um searchId salvo, tentar carregar o status
+        const savedSearchId = localStorage.getItem("searchId");
+        if (savedSearchId) {
+          const response = await fetch(`${API_ENDPOINTS.STATUS}?searchId=${savedSearchId}`);
+          if (response.ok) {
+            const status = await response.json();
+            setSearchStatus(status);
+            localStorage.setItem("searchStatus", JSON.stringify(status));
+          } else {
+            // Se a busca não existe mais, limpar
+            localStorage.removeItem("searchId");
+            localStorage.removeItem("searchStatus");
+          }
         }
       } catch (error) {
         console.error("Erro ao carregar dados do backend:", error);
@@ -150,6 +158,13 @@ const SearchPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Busca iniciada com sucesso:", data);
+        
+        // Salvar searchId
+        if (data.searchId) {
+          localStorage.setItem("searchId", data.searchId);
+          setSearchStatus(prev => ({ ...prev, searchId: data.searchId }));
+        }
+        
         // Iniciar polling do status
         pollStatus();
       } else {
@@ -187,6 +202,7 @@ const SearchPage: React.FC = () => {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        body: JSON.stringify({ searchId: searchStatus.searchId }),
       });
 
       if (response.ok) {
@@ -226,7 +242,15 @@ const SearchPage: React.FC = () => {
   const pollStatus = async () => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.STATUS, {
+        const searchId = searchStatus.searchId || localStorage.getItem("searchId");
+        if (!searchId) {
+          console.log("❌ Nenhum searchId encontrado");
+          clearInterval(interval);
+          setIsSearching(false);
+          return;
+        }
+
+        const response = await fetch(`${API_ENDPOINTS.STATUS}?searchId=${searchId}`, {
           headers: {
             Accept: "application/json",
           },
