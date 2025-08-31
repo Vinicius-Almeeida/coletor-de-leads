@@ -4,7 +4,7 @@ const API_BASE_URL =
   process.env.REACT_APP_API_URL ||
   (isDevelopment
     ? "http://localhost:3001"
-    : "https://coletor-de-leads-backend-js.vercel.app");
+    : "https://coletor-de-leads-4k5xza28r-vinicius-almeidas-projects-7d75f2c9.vercel.app");
 
 export const API_ENDPOINTS = {
   SEARCH: `${API_BASE_URL}/api/search`,
