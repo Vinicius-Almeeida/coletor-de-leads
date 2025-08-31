@@ -107,6 +107,12 @@ app.get("/api/test", (req, res) => {
     user_agent: req.headers["user-agent"] || "Unknown",
     origin: req.headers["origin"] || "Unknown",
     host: req.headers["host"] || "Unknown",
+    cors_headers: {
+      "Access-Control-Allow-Origin": res.getHeader("Access-Control-Allow-Origin"),
+      "Access-Control-Allow-Methods": res.getHeader("Access-Control-Allow-Methods"),
+      "Access-Control-Allow-Headers": res.getHeader("Access-Control-Allow-Headers"),
+    },
+    active_searches: activeSearches.size,
   });
 });
 
@@ -467,4 +473,5 @@ function updateGlobalStatistics(nicho, results) {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend rodando em: http://localhost:${PORT}`);
-  console.log(`
+  console.log(`📱 API Health: http://localhost:${PORT}/api/health`);
+});

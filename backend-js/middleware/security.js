@@ -57,22 +57,27 @@ function isValidUrl(url) {
 
 // Middleware de validação
 function validateInput(req, res, next) {
-  const { nicho, cidade } = req.body;
+  try {
+    const { nicho, cidade } = req.body;
 
-  // Sanitizar inputs
-  req.body.nicho = sanitizeInput(nicho);
-  req.body.cidade = sanitizeInput(cidade);
+    // Sanitizar inputs
+    if (nicho) req.body.nicho = sanitizeInput(nicho);
+    if (cidade) req.body.cidade = sanitizeInput(cidade);
 
-  // Validar tamanho
-  if (nicho && nicho.length > 100) {
-    return res.status(400).json({ error: "Nicho muito longo" });
+    // Validar tamanho
+    if (nicho && nicho.length > 100) {
+      return res.status(400).json({ error: "Nicho muito longo" });
+    }
+
+    if (cidade && cidade.length > 100) {
+      return res.status(400).json({ error: "Cidade muito longa" });
+    }
+
+    next();
+  } catch (error) {
+    console.error("❌ Erro na validação:", error);
+    return res.status(500).json({ error: "Erro na validação dos dados" });
   }
-
-  if (cidade && cidade.length > 100) {
-    return res.status(400).json({ error: "Cidade muito longa" });
-  }
-
-  next();
 }
 
 module.exports = {
