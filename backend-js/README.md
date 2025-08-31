@@ -128,11 +128,7 @@ PUPPETEER_HEADLESS=true
 2. Configure as variáveis de ambiente
 3. Deploy automático
 
-### Railway
 
-1. Conecte o repositório ao Railway
-2. Configure as variáveis de ambiente
-3. Deploy automático
 
 ### Heroku
 
