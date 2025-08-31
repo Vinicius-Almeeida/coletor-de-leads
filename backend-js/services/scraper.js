@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer");
+// const puppeteer = require("puppeteer"); // Temporariamente desabilitado para deploy
 const cheerio = require("cheerio");
 const axios = require("axios");
 
@@ -84,7 +84,9 @@ async function scrapeWebsite(url) {
   } catch (error) {
     console.log(`⚠️ Erro com axios, tentando Puppeteer para: ${url}`);
 
+    // Temporariamente desabilitado Puppeteer para deploy
     // Se axios falhar, tentar com Puppeteer
+    /*
     try {
       const browser = await puppeteer.launch({
         headless: true,
@@ -121,6 +123,7 @@ async function scrapeWebsite(url) {
         puppeteerError.message
       );
     }
+    */
   }
 
   return data;
