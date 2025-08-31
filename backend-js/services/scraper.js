@@ -26,7 +26,7 @@ async function enrichDataWithScraping(business) {
         enrichedBusiness.whatsapp = scrapedData.whatsapp;
         console.log(`✅ WhatsApp encontrado: ${scrapedData.whatsapp}`);
       }
-      
+
       // Outros dados
       if (scrapedData.linkedin) {
         enrichedBusiness.linkedin = scrapedData.linkedin;
@@ -47,13 +47,15 @@ async function enrichDataWithScraping(business) {
 
     // Log dos dados encontrados
     const foundData = [];
-    if (enrichedBusiness.email) foundData.push('Email');
-    if (enrichedBusiness.whatsapp) foundData.push('WhatsApp');
-    if (enrichedBusiness.linkedin) foundData.push('LinkedIn');
-    if (enrichedBusiness.facebook) foundData.push('Facebook');
-    
+    if (enrichedBusiness.email) foundData.push("Email");
+    if (enrichedBusiness.whatsapp) foundData.push("WhatsApp");
+    if (enrichedBusiness.linkedin) foundData.push("LinkedIn");
+    if (enrichedBusiness.facebook) foundData.push("Facebook");
+
     if (foundData.length > 0) {
-      console.log(`📊 Dados encontrados para ${business.nome}: ${foundData.join(', ')}`);
+      console.log(
+        `📊 Dados encontrados para ${business.nome}: ${foundData.join(", ")}`
+      );
     } else {
       console.log(`⚠️ Nenhum dado encontrado para ${business.nome}`);
     }
@@ -164,7 +166,9 @@ function extractEmail($, html) {
   }
 
   // 2. Buscar em elementos com classes/ids relacionados a email
-  const emailElements = $('[class*="email"], [id*="email"], [class*="mail"], [id*="mail"]');
+  const emailElements = $(
+    '[class*="email"], [id*="email"], [class*="mail"], [id*="mail"]'
+  );
   for (let i = 0; i < emailElements.length; i++) {
     const element = emailElements.eq(i);
     const text = element.text();
@@ -185,21 +189,22 @@ function extractEmail($, html) {
 
   if (emails && emails.length > 0) {
     // Filtrar emails válidos e priorizar emails corporativos
-    const validEmails = emails.filter(email => isValidEmail(email));
-    
+    const validEmails = emails.filter((email) => isValidEmail(email));
+
     // Priorizar emails que não são genéricos
-    const corporateEmails = validEmails.filter(email => 
-      !email.includes('noreply') && 
-      !email.includes('no-reply') && 
-      !email.includes('donotreply') &&
-      !email.includes('info@') &&
-      !email.includes('admin@')
+    const corporateEmails = validEmails.filter(
+      (email) =>
+        !email.includes("noreply") &&
+        !email.includes("no-reply") &&
+        !email.includes("donotreply") &&
+        !email.includes("info@") &&
+        !email.includes("admin@")
     );
-    
+
     if (corporateEmails.length > 0) {
       return corporateEmails[0];
     }
-    
+
     if (validEmails.length > 0) {
       return validEmails[0];
     }
@@ -264,7 +269,9 @@ function extractWhatsApp($, html) {
   }
 
   // 2. Buscar em elementos com classes/ids relacionados a WhatsApp
-  const whatsappElements = $('[class*="whatsapp"], [id*="whatsapp"], [class*="wa"], [id*="wa"]');
+  const whatsappElements = $(
+    '[class*="whatsapp"], [id*="whatsapp"], [class*="wa"], [id*="wa"]'
+  );
   for (let i = 0; i < whatsappElements.length; i++) {
     const element = whatsappElements.eq(i);
     const text = element.text();

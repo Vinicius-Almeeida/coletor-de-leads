@@ -15,12 +15,9 @@ const Navigation: React.FC = () => {
           <div className="flex items-center">
             <img
               src="/3IAN-ORANGE.png"
-              alt="Logo Coletor de Leads"
-              className="h-8 w-auto mr-3"
+              alt="Logo"
+              className="h-10 w-auto"
             />
-            <h1 className="text-xl font-bold text-gray-800">
-              Coletor de Leads
-            </h1>
           </div>
 
           <div className="flex items-center space-x-4">
