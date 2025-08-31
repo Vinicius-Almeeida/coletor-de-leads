@@ -395,7 +395,7 @@ const SearchPage: React.FC = () => {
               🗑️ Limpar Campos
             </button>
 
-            {isSearching && (
+            {(isSearching || searchStatus.running) && (
               <button
                 onClick={stopSearch}
                 className="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition-colors font-medium shadow-lg"
