@@ -82,6 +82,8 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./backend-js
           vercel-args: "--prod"
+        env:
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
 
   deploy-frontend:
     needs: test-frontend
