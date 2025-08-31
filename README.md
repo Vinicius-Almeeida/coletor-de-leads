@@ -3,6 +3,8 @@
 Sistema para coleta de leads empresariais usando Google Places API e web
 scraping ético.
 
+**Status**: Deploy automático habilitado via GitHub Actions
+
 ## 🚀 Arquitetura
 
 - **Frontend**: React + TypeScript + Tailwind CSS

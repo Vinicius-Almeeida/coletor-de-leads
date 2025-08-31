@@ -1,12 +1,11 @@
 name: CI/CD Pipeline
 
 on:
-  # Temporariamente desabilitado para deploy manual
-  # push:
-  #   branches: [main, develop]
-  # pull_request:
-  #   branches: [main]
-  workflow_dispatch: # Só roda manualmente
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Também roda manualmente
 
 jobs:
   test-backend:
