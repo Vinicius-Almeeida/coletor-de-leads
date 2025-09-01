@@ -14,7 +14,7 @@ const { generateExcelFile } = require("./services/excelGenerator");
 const Lead = require("./models/Lead");
 
 // Importa e inicializa a conexão com o banco de dados
-require("./db/connection");
+const sequelize = require("./db/connection");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -605,6 +605,34 @@ app.get("/api/leads", async (req, res) => {
   } catch (error) {
     console.error("❌ Erro ao buscar leads:", error);
     res.status(500).json({ error: "Ocorreu um erro ao buscar os leads." });
+  }
+});
+
+// Endpoint SECRETO para forçar a sincronização do banco de dados em produção
+app.get("/api/sync-db", async (req, res) => {
+  // Uma chave secreta simples para proteger o endpoint
+  const secret = req.query.secret;
+  if (secret !== process.env.SYNC_SECRET) {
+    return res.status(401).json({ error: "Não autorizado" });
+  }
+
+  try {
+    console.log("🔄 Iniciando sincronização manual do banco de dados...");
+    await sequelize.sync({ alter: true });
+    console.log(
+      "✅ Sincronização manual do banco de dados concluída com sucesso."
+    );
+    res
+      .status(200)
+      .json({ message: "Banco de dados sincronizado com sucesso!" });
+  } catch (error) {
+    console.error("❌ Erro na sincronização manual do banco:", error);
+    res
+      .status(500)
+      .json({
+        error: "Falha ao sincronizar o banco de dados.",
+        details: error.message,
+      });
   }
 });
 
