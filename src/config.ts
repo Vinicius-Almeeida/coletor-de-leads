@@ -16,4 +16,5 @@ export const API_ENDPOINTS = {
   DOWNLOAD: `${API_BASE_URL}/api/download`,
   HEALTH: `${API_BASE_URL}/api/health`,
   TEST: `${API_BASE_URL}/api/test`,
+  LEADS: `${API_BASE_URL}/api/leads`,
 };

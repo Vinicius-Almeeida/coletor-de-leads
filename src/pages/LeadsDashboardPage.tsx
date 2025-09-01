@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navigation from "../components/Navigation";
+import { API_ENDPOINTS } from "../config";
 
 // Componente do logo oficial do WhatsApp
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "" }) => (
@@ -38,8 +39,7 @@ const LeadsDashboardPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        // ATENÇÃO: Use a URL do seu backend. Para desenvolvimento, é esta:
-        const response = await fetch("http://localhost:3001/api/leads");
+        const response = await fetch(API_ENDPOINTS.LEADS);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
