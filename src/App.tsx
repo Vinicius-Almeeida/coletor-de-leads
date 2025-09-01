@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import SearchPage from "./pages/SearchPage";
 import DashboardPage from "./pages/DashboardPage";
 import WhatsAppLeadsPage from "./pages/WhatsAppLeadsPage";
+import LeadsDashboardPage from "./pages/LeadsDashboardPage";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route path="/" element={<SearchPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/whatsapp-leads" element={<WhatsAppLeadsPage />} />
+          <Route path="/dashboard-leads" element={<LeadsDashboardPage />} />
         </Routes>
       </div>
     </Router>

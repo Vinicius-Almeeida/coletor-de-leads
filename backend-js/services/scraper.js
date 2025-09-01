@@ -34,6 +34,9 @@ async function enrichDataWithScraping(business) {
       if (scrapedData.facebook) {
         enrichedBusiness.facebook = scrapedData.facebook;
       }
+      if (scrapedData.instagram) {
+        enrichedBusiness.instagram = scrapedData.instagram;
+      }
     }
 
     // Tentar encontrar WhatsApp no telefone (prioridade)
@@ -51,6 +54,7 @@ async function enrichDataWithScraping(business) {
     if (enrichedBusiness.whatsapp) foundData.push("WhatsApp");
     if (enrichedBusiness.linkedin) foundData.push("LinkedIn");
     if (enrichedBusiness.facebook) foundData.push("Facebook");
+    if (enrichedBusiness.instagram) foundData.push("Instagram");
 
     if (foundData.length > 0) {
       console.log(
@@ -76,6 +80,7 @@ async function scrapeWebsite(url) {
     email: "",
     linkedin: "",
     facebook: "",
+    instagram: "",
     whatsapp: "",
   };
 
@@ -98,6 +103,7 @@ async function scrapeWebsite(url) {
     // Extrair redes sociais
     data.linkedin = extractLinkedIn($, html);
     data.facebook = extractFacebook($, html);
+    data.instagram = extractInstagram($, html);
 
     // Extrair WhatsApp
     data.whatsapp = extractWhatsApp($, html);
@@ -156,18 +162,20 @@ async function scrapeWebsite(url) {
  * @returns {string} Email encontrado
  */
 function extractEmail($, html) {
+  const foundEmails = [];
+
   // 1. Prioridade: Buscar em atributos href mailto
   const emailLinks = $('a[href^="mailto:"]');
   if (emailLinks.length > 0) {
     const email = emailLinks.first().attr("href").replace("mailto:", "");
     if (isValidEmail(email)) {
-      return email;
+      foundEmails.push({ email, priority: 1, source: "mailto" });
     }
   }
 
   // 2. Buscar em elementos com classes/ids relacionados a email
   const emailElements = $(
-    '[class*="email"], [id*="email"], [class*="mail"], [id*="mail"]'
+    '[class*="email"], [id*="email"], [class*="mail"], [id*="mail"], [class*="contato"], [id*="contato"], [class*="contact"], [id*="contact"]'
   );
   for (let i = 0; i < emailElements.length; i++) {
     const element = emailElements.eq(i);
@@ -177,36 +185,100 @@ function extractEmail($, html) {
     if (emails && emails.length > 0) {
       for (const email of emails) {
         if (isValidEmail(email)) {
-          return email;
+          foundEmails.push({ email, priority: 2, source: "email-element" });
         }
       }
     }
   }
 
-  // 3. Buscar em todo o HTML usando regex
+  // 3. Buscar em elementos de contato
+  const contactElements = $(
+    'p, span, div, td, th, li, address, [class*="footer"], [class*="header"], [class*="sidebar"]'
+  );
+  for (let i = 0; i < contactElements.length; i++) {
+    const element = contactElements.eq(i);
+    const text = element.text();
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+    const emails = text.match(emailRegex);
+    if (emails && emails.length > 0) {
+      for (const email of emails) {
+        if (isValidEmail(email)) {
+          foundEmails.push({ email, priority: 3, source: "contact-element" });
+        }
+      }
+    }
+  }
+
+  // 4. Buscar em todo o HTML usando regex (última opção)
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
   const emails = html.match(emailRegex);
-
   if (emails && emails.length > 0) {
-    // Filtrar emails válidos e priorizar emails corporativos
-    const validEmails = emails.filter((email) => isValidEmail(email));
+    for (const email of emails) {
+      if (isValidEmail(email)) {
+        foundEmails.push({ email, priority: 4, source: "html-regex" });
+      }
+    }
+  }
 
-    // Priorizar emails que não são genéricos
-    const corporateEmails = validEmails.filter(
-      (email) =>
-        !email.includes("noreply") &&
-        !email.includes("no-reply") &&
-        !email.includes("donotreply") &&
-        !email.includes("info@") &&
-        !email.includes("admin@")
-    );
+  // Filtrar e priorizar emails
+  if (foundEmails.length > 0) {
+    // Remover duplicatas
+    const uniqueEmails = [];
+    const seenEmails = new Set();
 
-    if (corporateEmails.length > 0) {
-      return corporateEmails[0];
+    for (const item of foundEmails) {
+      if (!seenEmails.has(item.email.toLowerCase())) {
+        seenEmails.add(item.email.toLowerCase());
+        uniqueEmails.push(item);
+      }
     }
 
-    if (validEmails.length > 0) {
-      return validEmails[0];
+    // Priorizar emails corporativos (não genéricos)
+    const corporateEmails = uniqueEmails.filter(
+      (item) =>
+        !item.email.includes("noreply") &&
+        !item.email.includes("no-reply") &&
+        !item.email.includes("donotreply") &&
+        !item.email.includes("info@") &&
+        !item.email.includes("admin@") &&
+        !item.email.includes("webmaster@") &&
+        !item.email.includes("postmaster@") &&
+        !item.email.includes("abuse@") &&
+        !item.email.includes("support@") &&
+        !item.email.includes("help@") &&
+        !item.email.includes("sales@") &&
+        !item.email.includes("contact@") &&
+        !item.email.includes("hello@") &&
+        !item.email.includes("noreply@") &&
+        !item.email.includes("no-reply@") &&
+        !item.email.includes("donotreply@") &&
+        !item.email.includes("webmaster@") &&
+        !item.email.includes("postmaster@") &&
+        !item.email.includes("abuse@") &&
+        !item.email.includes("support@") &&
+        !item.email.includes("help@") &&
+        !item.email.includes("sales@") &&
+        !item.email.includes("contact@") &&
+        !item.email.includes("hello@")
+    );
+
+    // Retornar o melhor email encontrado
+    if (corporateEmails.length > 0) {
+      // Ordenar por prioridade e retornar o primeiro
+      corporateEmails.sort((a, b) => a.priority - b.priority);
+      console.log(
+        `📧 Email corporativo encontrado: ${corporateEmails[0].email} (${corporateEmails[0].source})`
+      );
+      return corporateEmails[0].email;
+    }
+
+    if (uniqueEmails.length > 0) {
+      // Ordenar por prioridade e retornar o primeiro
+      uniqueEmails.sort((a, b) => a.priority - b.priority);
+      console.log(
+        `📧 Email encontrado: ${uniqueEmails[0].email} (${uniqueEmails[0].source})`
+      );
+      return uniqueEmails[0].email;
     }
   }
 
@@ -220,17 +292,56 @@ function extractEmail($, html) {
  * @returns {string} LinkedIn encontrado
  */
 function extractLinkedIn($, html) {
-  // Buscar em links
+  const foundLinkedIns = [];
+
+  // 1. Prioridade: Buscar em links
   const linkedinLinks = $('a[href*="linkedin.com"]');
   if (linkedinLinks.length > 0) {
-    return linkedinLinks.first().attr("href");
+    const href = linkedinLinks.first().attr("href");
+    if (href && href.includes("linkedin.com")) {
+      foundLinkedIns.push({ url: href, priority: 1, source: "linkedin-link" });
+    }
   }
 
-  // Buscar em texto
+  // 2. Buscar em elementos com classes/ids relacionados
+  const socialElements = $(
+    '[class*="linkedin"], [id*="linkedin"], [class*="social"], [id*="social"], [class*="redes"], [id*="redes"]'
+  );
+  for (let i = 0; i < socialElements.length; i++) {
+    const element = socialElements.eq(i);
+    const text = element.text();
+    const linkedinRegex = /https?:\/\/(www\.)?linkedin\.com\/[^\s"']+/g;
+    const linkedins = text.match(linkedinRegex);
+    if (linkedins && linkedins.length > 0) {
+      for (const linkedin of linkedins) {
+        foundLinkedIns.push({
+          url: linkedin,
+          priority: 2,
+          source: "social-element",
+        });
+      }
+    }
+  }
+
+  // 3. Buscar em todo o HTML
   const linkedinRegex = /https?:\/\/(www\.)?linkedin\.com\/[^\s"']+/g;
   const linkedins = html.match(linkedinRegex);
+  if (linkedins && linkedins.length > 0) {
+    for (const linkedin of linkedins) {
+      foundLinkedIns.push({ url: linkedin, priority: 3, source: "html-regex" });
+    }
+  }
 
-  return linkedins && linkedins.length > 0 ? linkedins[0] : "";
+  // Retornar o primeiro encontrado
+  if (foundLinkedIns.length > 0) {
+    foundLinkedIns.sort((a, b) => a.priority - b.priority);
+    console.log(
+      `💼 LinkedIn encontrado: ${foundLinkedIns[0].url} (${foundLinkedIns[0].source})`
+    );
+    return foundLinkedIns[0].url;
+  }
+
+  return "";
 }
 
 /**
@@ -240,17 +351,123 @@ function extractLinkedIn($, html) {
  * @returns {string} Facebook encontrado
  */
 function extractFacebook($, html) {
-  // Buscar em links
+  const foundFacebooks = [];
+
+  // 1. Prioridade: Buscar em links
   const facebookLinks = $('a[href*="facebook.com"]');
   if (facebookLinks.length > 0) {
-    return facebookLinks.first().attr("href");
+    const href = facebookLinks.first().attr("href");
+    if (href && href.includes("facebook.com")) {
+      foundFacebooks.push({ url: href, priority: 1, source: "facebook-link" });
+    }
   }
 
-  // Buscar em texto
+  // 2. Buscar em elementos com classes/ids relacionados
+  const socialElements = $(
+    '[class*="facebook"], [id*="facebook"], [class*="social"], [id*="social"], [class*="redes"], [id*="redes"], [class*="fb"], [id*="fb"]'
+  );
+  for (let i = 0; i < socialElements.length; i++) {
+    const element = socialElements.eq(i);
+    const text = element.text();
+    const facebookRegex = /https?:\/\/(www\.)?facebook\.com\/[^\s"']+/g;
+    const facebooks = text.match(facebookRegex);
+    if (facebooks && facebooks.length > 0) {
+      for (const facebook of facebooks) {
+        foundFacebooks.push({
+          url: facebook,
+          priority: 2,
+          source: "social-element",
+        });
+      }
+    }
+  }
+
+  // 3. Buscar em todo o HTML
   const facebookRegex = /https?:\/\/(www\.)?facebook\.com\/[^\s"']+/g;
   const facebooks = html.match(facebookRegex);
+  if (facebooks && facebooks.length > 0) {
+    for (const facebook of facebooks) {
+      foundFacebooks.push({ url: facebook, priority: 3, source: "html-regex" });
+    }
+  }
 
-  return facebooks && facebooks.length > 0 ? facebooks[0] : "";
+  // Retornar o primeiro encontrado
+  if (foundFacebooks.length > 0) {
+    foundFacebooks.sort((a, b) => a.priority - b.priority);
+    console.log(
+      `📘 Facebook encontrado: ${foundFacebooks[0].url} (${foundFacebooks[0].source})`
+    );
+    return foundFacebooks[0].url;
+  }
+
+  return "";
+}
+
+/**
+ * Extrai Instagram do HTML
+ * @param {Object} $ - Cheerio object
+ * @param {string} html - HTML completo
+ * @returns {string} Instagram encontrado
+ */
+function extractInstagram($, html) {
+  const foundInstagrams = [];
+
+  // 1. Prioridade: Buscar em links
+  const instagramLinks = $('a[href*="instagram.com"]');
+  if (instagramLinks.length > 0) {
+    const href = instagramLinks.first().attr("href");
+    if (href && href.includes("instagram.com")) {
+      foundInstagrams.push({
+        url: href,
+        priority: 1,
+        source: "instagram-link",
+      });
+    }
+  }
+
+  // 2. Buscar em elementos com classes/ids relacionados
+  const socialElements = $(
+    '[class*="instagram"], [id*="instagram"], [class*="social"], [id*="social"], [class*="redes"], [id*="redes"], [class*="ig"], [id*="ig"]'
+  );
+  for (let i = 0; i < socialElements.length; i++) {
+    const element = socialElements.eq(i);
+    const text = element.text();
+    const instagramRegex = /https?:\/\/(www\.)?instagram\.com\/[^\s"']+/g;
+    const instagrams = text.match(instagramRegex);
+    if (instagrams && instagrams.length > 0) {
+      for (const instagram of instagrams) {
+        foundInstagrams.push({
+          url: instagram,
+          priority: 2,
+          source: "social-element",
+        });
+      }
+    }
+  }
+
+  // 3. Buscar em todo o HTML
+  const instagramRegex = /https?:\/\/(www\.)?instagram\.com\/[^\s"']+/g;
+  const instagrams = html.match(instagramRegex);
+  if (instagrams && instagrams.length > 0) {
+    for (const instagram of instagrams) {
+      foundInstagrams.push({
+        url: instagram,
+        priority: 3,
+        source: "html-regex",
+      });
+    }
+  }
+
+  // Retornar o primeiro encontrado
+  if (foundInstagrams.length > 0) {
+    foundInstagrams.sort((a, b) => a.priority - b.priority);
+    console.log(
+      `📸 Instagram encontrado: ${foundInstagrams[0].url} (${foundInstagrams[0].source})`
+    );
+    return foundInstagrams[0].url;
+  }
+
+  return "";
 }
 
 /**
@@ -260,37 +477,88 @@ function extractFacebook($, html) {
  * @returns {string} WhatsApp encontrado
  */
 function extractWhatsApp($, html) {
+  const foundWhatsApps = [];
+
   // 1. Prioridade: Buscar em links WhatsApp
   const whatsappLinks = $('a[href*="wa.me"], a[href*="whatsapp.com"]');
   if (whatsappLinks.length > 0) {
     const href = whatsappLinks.first().attr("href");
     const number = extractWhatsAppNumber(href);
-    if (number) return number;
+    if (number) {
+      foundWhatsApps.push({ number, priority: 1, source: "whatsapp-link" });
+    }
   }
 
   // 2. Buscar em elementos com classes/ids relacionados a WhatsApp
   const whatsappElements = $(
-    '[class*="whatsapp"], [id*="whatsapp"], [class*="wa"], [id*="wa"]'
+    '[class*="whatsapp"], [id*="whatsapp"], [class*="wa"], [id*="wa"], [class*="contato"], [id*="contato"], [class*="contact"], [id*="contact"], [class*="telefone"], [id*="telefone"], [class*="phone"], [id*="phone"]'
   );
   for (let i = 0; i < whatsappElements.length; i++) {
     const element = whatsappElements.eq(i);
     const text = element.text();
+
+    // Buscar links WhatsApp
     const whatsappRegex = /(?:wa\.me|whatsapp\.com)\/(\d+)/g;
     const whatsapps = text.match(whatsappRegex);
     if (whatsapps && whatsapps.length > 0) {
-      const number = extractWhatsAppNumber(whatsapps[0]);
-      if (number) return number;
+      for (const whatsapp of whatsapps) {
+        const number = extractWhatsAppNumber(whatsapp);
+        if (number) {
+          foundWhatsApps.push({
+            number,
+            priority: 2,
+            source: "whatsapp-element",
+          });
+        }
+      }
+    }
+
+    // Buscar números de telefone
+    const phoneRegex = /(?:\+55|55)?\s*(?:\(?\d{2}\)?)\s*(?:9?\d{4})-?\d{4}/g;
+    const phones = text.match(phoneRegex);
+    if (phones && phones.length > 0) {
+      for (const phone of phones) {
+        const number = extractWhatsAppNumber(phone);
+        if (number && number.length >= 10) {
+          foundWhatsApps.push({ number, priority: 3, source: "phone-element" });
+        }
+      }
     }
   }
 
-  // 3. Buscar números de telefone que podem ser WhatsApp
-  const phoneRegex = /(?:\+55|55)?\s*(?:\(?\d{2}\)?)\s*(?:9?\d{4})-?\d{4}/g;
-  const phones = html.match(phoneRegex);
-  if (phones && phones.length > 0) {
-    for (const phone of phones) {
-      const number = extractWhatsAppNumber(phone);
-      if (number && number.length >= 10) {
-        return number;
+  // 3. Buscar em elementos de contato
+  const contactElements = $(
+    'p, span, div, td, th, li, address, [class*="footer"], [class*="header"], [class*="sidebar"]'
+  );
+  for (let i = 0; i < contactElements.length; i++) {
+    const element = contactElements.eq(i);
+    const text = element.text();
+
+    // Buscar links WhatsApp
+    const whatsappRegex = /(?:wa\.me|whatsapp\.com)\/(\d+)/g;
+    const whatsapps = text.match(whatsappRegex);
+    if (whatsapps && whatsapps.length > 0) {
+      for (const whatsapp of whatsapps) {
+        const number = extractWhatsAppNumber(whatsapp);
+        if (number) {
+          foundWhatsApps.push({
+            number,
+            priority: 4,
+            source: "contact-element",
+          });
+        }
+      }
+    }
+
+    // Buscar números de telefone
+    const phoneRegex = /(?:\+55|55)?\s*(?:\(?\d{2}\)?)\s*(?:9?\d{4})-?\d{4}/g;
+    const phones = text.match(phoneRegex);
+    if (phones && phones.length > 0) {
+      for (const phone of phones) {
+        const number = extractWhatsAppNumber(phone);
+        if (number && number.length >= 10) {
+          foundWhatsApps.push({ number, priority: 5, source: "contact-phone" });
+        }
       }
     }
   }
@@ -298,9 +566,46 @@ function extractWhatsApp($, html) {
   // 4. Buscar em todo o HTML usando regex WhatsApp
   const whatsappRegex = /(?:wa\.me|whatsapp\.com)\/(\d+)/g;
   const whatsapps = html.match(whatsappRegex);
-
   if (whatsapps && whatsapps.length > 0) {
-    return extractWhatsAppNumber(whatsapps[0]);
+    for (const whatsapp of whatsapps) {
+      const number = extractWhatsAppNumber(whatsapp);
+      if (number) {
+        foundWhatsApps.push({ number, priority: 6, source: "html-regex" });
+      }
+    }
+  }
+
+  // 5. Buscar números de telefone em todo o HTML
+  const phoneRegex = /(?:\+55|55)?\s*(?:\(?\d{2}\)?)\s*(?:9?\d{4})-?\d{4}/g;
+  const phones = html.match(phoneRegex);
+  if (phones && phones.length > 0) {
+    for (const phone of phones) {
+      const number = extractWhatsAppNumber(phone);
+      if (number && number.length >= 10) {
+        foundWhatsApps.push({ number, priority: 7, source: "html-phone" });
+      }
+    }
+  }
+
+  // Filtrar e priorizar WhatsApp
+  if (foundWhatsApps.length > 0) {
+    // Remover duplicatas
+    const uniqueWhatsApps = [];
+    const seenNumbers = new Set();
+
+    for (const item of foundWhatsApps) {
+      if (!seenNumbers.has(item.number)) {
+        seenNumbers.add(item.number);
+        uniqueWhatsApps.push(item);
+      }
+    }
+
+    // Ordenar por prioridade e retornar o primeiro
+    uniqueWhatsApps.sort((a, b) => a.priority - b.priority);
+    console.log(
+      `📱 WhatsApp encontrado: ${uniqueWhatsApps[0].number} (${uniqueWhatsApps[0].source})`
+    );
+    return uniqueWhatsApps[0].number;
   }
 
   return "";

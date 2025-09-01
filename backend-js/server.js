@@ -11,9 +11,10 @@ const {
 const { searchGooglePlaces } = require("./services/googlePlaces");
 const { enrichDataWithScraping } = require("./services/scraper");
 const { generateExcelFile } = require("./services/excelGenerator");
+const Lead = require("./models/Lead");
 
-// Carregar variáveis de ambiente
-dotenv.config();
+// Importa e inicializa a conexão com o banco de dados
+require("./db/connection");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -142,7 +143,7 @@ app.post("/api/search", searchLimiter, validateInput, async (req, res) => {
       searchId,
       running: true,
       phase: "Iniciando busca...",
-      progress: 0.00,
+      progress: 0.0,
       total: 0,
       found: 0,
       current_item: "",
@@ -426,7 +427,7 @@ async function realSearch(searchId, nicho, cidade) {
     );
 
     searchStatus.phase = "Fase 1: Buscando empresas via Google Places API";
-    searchStatus.progress = 10.00;
+    searchStatus.progress = 10.0;
 
     // Buscar empresas via Google Places API
     const businesses = await searchGooglePlaces(nicho, cidade);
@@ -457,14 +458,14 @@ async function realSearch(searchId, nicho, cidade) {
     if (newBusinesses.length === 0) {
       searchStatus.phase = "Todas as empresas já foram coletadas anteriormente";
       searchStatus.results = existingCompanies;
-      searchStatus.progress = 100.00;
+      searchStatus.progress = 100.0;
       searchStatus.running = false;
       activeSearches.set(searchId, searchStatus);
       return;
     }
 
     searchStatus.total = Math.min(newBusinesses.length, 50);
-    searchStatus.progress = 30.00;
+    searchStatus.progress = 30.0;
     searchStatus.phase = `Fase 2: Enriquecendo dados de ${Math.min(
       newBusinesses.length,
       50
@@ -484,7 +485,8 @@ async function realSearch(searchId, nicho, cidade) {
 
       const business = newBusinesses[i];
       searchStatus.current_item = business.nome || "Empresa";
-      searchStatus.progress = Math.round((30 + (i / maxBusinesses) * 60) * 100) / 100;
+      searchStatus.progress =
+        Math.round((30 + (i / maxBusinesses) * 60) * 100) / 100;
 
       console.log(
         `🔍 [${searchId}] Processando ${i + 1}/${maxBusinesses}: ${
@@ -494,6 +496,27 @@ async function realSearch(searchId, nicho, cidade) {
 
       // Enriquecer com scraping
       const enrichedBusiness = await enrichDataWithScraping(business);
+
+      // Salvar o lead enriquecido no banco de dados, incluindo o nicho
+      try {
+        await Lead.create({
+          ...enrichedBusiness, // Copia todos os dados do lead
+          nicho: nicho, // Adiciona o nicho da busca atual
+        });
+        console.log(
+          `💾 Lead "${
+            enrichedBusiness.nome || "Empresa"
+          }" (Nicho: ${nicho}) salvo no banco de dados.`
+        );
+      } catch (dbError) {
+        console.error(
+          `❌ Erro ao salvar o lead "${
+            enrichedBusiness.nome || "Empresa"
+          }" no banco:`,
+          dbError
+        );
+      }
+
       enrichedResults.push(enrichedBusiness);
 
       searchStatus.found = enrichedResults.length;
@@ -511,7 +534,7 @@ async function realSearch(searchId, nicho, cidade) {
 
     // Atualizar resultados
     searchStatus.results = allResults;
-    searchStatus.progress = 100.00;
+    searchStatus.progress = 100.0;
     searchStatus.phase = `Busca concluída! ${enrichedResults.length} novas empresas adicionadas`;
 
     // Atualizar estatísticas globais
@@ -558,6 +581,33 @@ function updateGlobalStatistics(nicho, results) {
   }
   allSearches.segments[nicho] += results.length;
 }
+
+// Endpoint para buscar leads (com filtro opcional por nicho)
+app.get('/api/leads', async (req, res) => {
+  try {
+    const { nicho } = req.query; // Pega o 'nicho' da URL (ex: /api/leads?nicho=restaurante)
+
+    const options = {
+      order: [['createdAt', 'DESC']] // Ordena os leads do mais recente para o mais antigo
+    };
+
+    // Se um nicho foi fornecido na URL, adiciona um filtro à busca
+    if (nicho) {
+      options.where = {
+        nicho: nicho
+      };
+    }
+
+    // Busca os leads no banco de dados usando as opções definidas
+    const leads = await Lead.findAll(options);
+
+    console.log(`🔍 Foram encontrados ${leads.length} leads.`);
+    res.status(200).json(leads);
+  } catch (error) {
+    console.error('❌ Erro ao buscar leads:', error);
+    res.status(500).json({ error: 'Ocorreu um erro ao buscar os leads.' });
+  }
+});
 
 // Iniciar servidor
 app.listen(PORT, () => {
