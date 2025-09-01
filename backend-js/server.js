@@ -2,6 +2,19 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const helmet = require("helmet");
+
+// Carrega as variáveis de ambiente (procura no diretório pai também)
+dotenv.config({ path: "../.env" });
+dotenv.config(); // Fallback para o diretório atual
+
+// Debug: verificar se as variáveis estão sendo carregadas
+console.log("🔧 Variáveis de ambiente carregadas:");
+console.log(
+  "SYNC_SECRET:",
+  process.env.SYNC_SECRET ? "Configurado" : "NÃO configurado"
+);
+console.log("PORT:", process.env.PORT);
+console.log("NODE_ENV:", process.env.NODE_ENV);
 const {
   limiter,
   searchLimiter,
@@ -13,6 +26,7 @@ const { enrichDataWithScraping } = require("./services/scraper");
 const { generateExcelFile } = require("./services/excelGenerator");
 const Lead = require("./models/Lead");
 const { Op } = require("sequelize"); // Op (Operadores) é necessário para filtros avançados
+const userRoutes = require('./routes/userRoutes');
 
 // Importa e inicializa a conexão com o banco de dados
 const sequelize = require("./db/connection");
@@ -45,6 +59,9 @@ app.use(
 );
 
 app.use(express.json({ limit: "10mb" }));
+
+// Ativa as rotas de usuário (registro, login, etc.)
+app.use('/api/users', userRoutes);
 
 // Headers CORS para todas as respostas
 app.use((req, res, next) => {
