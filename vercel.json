@@ -6,7 +6,7 @@
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://coletor-de-leads-4nog.vercel.app"
+          "value": "*"
         },
         {
           "key": "Access-Control-Allow-Methods",
