@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
 
 const Navigation: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
@@ -16,6 +19,12 @@ const Navigation: React.FC = () => {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+    closeMenu();
   };
 
   return (
@@ -72,6 +81,31 @@ const Navigation: React.FC = () => {
             >
               📋 Dashboard de Leads
             </Link>
+
+            {/* Botões de Autenticação */}
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
+              >
+                🚪 Sair
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  🔑 Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors"
+                >
+                  ✨ Registrar
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -168,6 +202,33 @@ const Navigation: React.FC = () => {
             >
               📋 Dashboard de Leads
             </Link>
+
+            {/* Botões de Autenticação Mobile */}
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
+              >
+                🚪 Sair
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  🔑 Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={closeMenu}
+                  className="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                >
+                  ✨ Registrar
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
