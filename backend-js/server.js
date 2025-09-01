@@ -12,6 +12,7 @@ const { searchGooglePlaces } = require("./services/googlePlaces");
 const { enrichDataWithScraping } = require("./services/scraper");
 const { generateExcelFile } = require("./services/excelGenerator");
 const Lead = require("./models/Lead");
+const { Op } = require("sequelize"); // Op (Operadores) é necessário para filtros avançados
 
 // Importa e inicializa a conexão com o banco de dados
 const sequelize = require("./db/connection");
@@ -260,39 +261,50 @@ app.get("/api/download", async (req, res) => {
   }
 });
 
-app.get("/api/dashboard-data", (req, res) => {
-  // Calcular estatísticas em tempo real
-  const dashboardData = {
-    searches: allSearches.searches,
-    total_leads: 0,
-    segments: {},
-  };
+app.get("/api/dashboard-data", async (req, res) => {
+  try {
+    // 1. Contar o total de leads na tabela
+    const totalLeads = await Lead.count();
 
-  // Calcular total de leads de todas as buscas ativas
-  for (const [searchId, searchStatus] of activeSearches.entries()) {
-    if (searchStatus.results && searchStatus.results.length > 0) {
-      dashboardData.total_leads += searchStatus.results.length;
+    // 2. Buscar os nichos distintos e contar quantos leads cada um tem
+    const segmentsData = await Lead.findAll({
+      attributes: [
+        "nicho",
+        [sequelize.fn("COUNT", sequelize.col("nicho")), "count"],
+      ],
+      group: ["nicho"],
+      where: {
+        nicho: {
+          [Op.ne]: null, // Filtra para garantir que não contamos nichos nulos
+        },
+      },
+    });
 
-      const nicho = searchStatus.current_nicho || "Geral";
-      if (!dashboardData.segments[nicho]) {
-        dashboardData.segments[nicho] = 0;
-      }
-      dashboardData.segments[nicho] += searchStatus.results.length;
-    }
+    // 3. Contar o número de segmentos (nichos) distintos
+    const totalSegments = segmentsData.length;
+
+    // 4. Montar o objeto de resposta final para o frontend
+    const dashboardData = {
+      total_leads: totalLeads,
+      total_segments: totalSegments,
+      segments: segmentsData.map((item) => {
+        const plainItem = item.get({ plain: true });
+        return {
+          segmento: plainItem.nicho,
+          total: parseInt(plainItem.count, 10),
+        };
+      }),
+      // A métrica 'total_searches' ficará como 0 por enquanto, pois é um cálculo mais complexo
+      total_searches: 0,
+    };
+
+    res.status(200).json(dashboardData);
+  } catch (error) {
+    console.error("❌ Erro ao buscar dados para o dashboard:", error);
+    res
+      .status(500)
+      .json({ error: "Ocorreu um erro ao buscar os dados do dashboard." });
   }
-
-  // Adicionar dados do cache global (para compatibilidade)
-  Object.entries(searchCache).forEach(([cacheKey, companies]) => {
-    dashboardData.total_leads += companies.length;
-
-    const nicho = cacheKey.split("_")[0] || "Geral";
-    if (!dashboardData.segments[nicho]) {
-      dashboardData.segments[nicho] = 0;
-    }
-    dashboardData.segments[nicho] += companies.length;
-  });
-
-  res.json(dashboardData);
 });
 
 app.get("/api/whatsapp-leads", (req, res) => {
@@ -627,12 +639,10 @@ app.get("/api/sync-db", async (req, res) => {
       .json({ message: "Banco de dados sincronizado com sucesso!" });
   } catch (error) {
     console.error("❌ Erro na sincronização manual do banco:", error);
-    res
-      .status(500)
-      .json({
-        error: "Falha ao sincronizar o banco de dados.",
-        details: error.message,
-      });
+    res.status(500).json({
+      error: "Falha ao sincronizar o banco de dados.",
+      details: error.message,
+    });
   }
 });
 
