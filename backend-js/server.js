@@ -284,16 +284,17 @@ app.get("/api/dashboard-data", async (req, res) => {
     const totalSegments = segmentsData.length;
 
     // 4. Montar o objeto de resposta final para o frontend
+    // Converter array para objeto para compatibilidade com o frontend existente
+    const segmentsObject = {};
+    segmentsData.forEach(item => {
+      const plainItem = item.get({ plain: true });
+      segmentsObject[plainItem.nicho] = parseInt(plainItem.count, 10);
+    });
+
     const dashboardData = {
       total_leads: totalLeads,
       total_segments: totalSegments,
-      segments: segmentsData.map((item) => {
-        const plainItem = item.get({ plain: true });
-        return {
-          segmento: plainItem.nicho,
-          total: parseInt(plainItem.count, 10),
-        };
-      }),
+      segments: segmentsObject, // Agora é um objeto {segmento: total}
       // A métrica 'total_searches' ficará como 0 por enquanto, pois é um cálculo mais complexo
       total_searches: 0,
     };
