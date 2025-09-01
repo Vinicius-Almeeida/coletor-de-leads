@@ -28,21 +28,33 @@ app.use(
 );
 app.use(limiter);
 
-// CORS
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-    allowedHeaders: [
-      "Content-Type",
-      "Accept",
-      "Authorization",
-      "X-Requested-With",
-    ],
-    credentials: true,
-    maxAge: 3600,
-  })
-);
+// Configuração de CORS mais robusta para produção e desenvolvimento
+const allowedOrigins = [
+  "https://coletor-de-leads-4nog.vercel.app", // URL do seu frontend em produção
+  "http://localhost:3000", // URL comum para desenvolvimento React
+  "http://localhost:5173", // URL comum para desenvolvimento Vite/React
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir requisições sem 'origin' (ex: Postman) ou se a origem estiver na nossa lista.
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Não permitido pela política de CORS"));
+    }
+  },
+  methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+  allowedHeaders: [
+    "Content-Type",
+    "Accept",
+    "Authorization",
+    "X-Requested-With",
+  ],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: "10mb" }));
 
@@ -583,18 +595,18 @@ function updateGlobalStatistics(nicho, results) {
 }
 
 // Endpoint para buscar leads (com filtro opcional por nicho)
-app.get('/api/leads', async (req, res) => {
+app.get("/api/leads", async (req, res) => {
   try {
     const { nicho } = req.query; // Pega o 'nicho' da URL (ex: /api/leads?nicho=restaurante)
 
     const options = {
-      order: [['createdAt', 'DESC']] // Ordena os leads do mais recente para o mais antigo
+      order: [["createdAt", "DESC"]], // Ordena os leads do mais recente para o mais antigo
     };
 
     // Se um nicho foi fornecido na URL, adiciona um filtro à busca
     if (nicho) {
       options.where = {
-        nicho: nicho
+        nicho: nicho,
       };
     }
 
@@ -604,8 +616,8 @@ app.get('/api/leads', async (req, res) => {
     console.log(`🔍 Foram encontrados ${leads.length} leads.`);
     res.status(200).json(leads);
   } catch (error) {
-    console.error('❌ Erro ao buscar leads:', error);
-    res.status(500).json({ error: 'Ocorreu um erro ao buscar os leads.' });
+    console.error("❌ Erro ao buscar leads:", error);
+    res.status(500).json({ error: "Ocorreu um erro ao buscar os leads." });
   }
 });
 
