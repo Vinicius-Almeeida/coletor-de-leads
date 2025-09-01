@@ -1,4 +1,10 @@
 {
+  "functions": {
+    "server.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
+    }
+  },
   "headers": [
     {
       "source": "/api/(.*)",

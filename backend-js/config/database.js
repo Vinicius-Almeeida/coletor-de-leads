@@ -32,6 +32,13 @@ const productionConfig = {
     timestamps: true,
     underscored: true,
   },
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000,
+  },
+  logging: false, // Desabilita logs SQL em produção
 };
 
 // Se a variável NODE_ENV for 'production', usa a config de produção.

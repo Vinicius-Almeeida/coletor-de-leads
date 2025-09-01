@@ -1,0 +1,12 @@
+node_modules
+coverage
+tests
+*.test.js
+*.spec.js
+.env
+.env.local
+.git
+.gitignore
+README.md
+jest.config.js
+test-server.js

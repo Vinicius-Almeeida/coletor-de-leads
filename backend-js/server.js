@@ -29,12 +29,19 @@ app.use(
 app.use(limiter);
 
 // Configuração CORS simplificada para resolver problemas de produção
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Accept", "Authorization", "X-Requested-With"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+    allowedHeaders: [
+      "Content-Type",
+      "Accept",
+      "Authorization",
+      "X-Requested-With",
+    ],
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: "10mb" }));
 
