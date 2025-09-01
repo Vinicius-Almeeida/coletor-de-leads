@@ -286,7 +286,7 @@ app.get("/api/dashboard-data", async (req, res) => {
     // 4. Montar o objeto de resposta final para o frontend
     // Converter array para objeto para compatibilidade com o frontend existente
     const segmentsObject = {};
-    segmentsData.forEach(item => {
+    segmentsData.forEach((item) => {
       const plainItem = item.get({ plain: true });
       segmentsObject[plainItem.nicho] = parseInt(plainItem.count, 10);
     });
