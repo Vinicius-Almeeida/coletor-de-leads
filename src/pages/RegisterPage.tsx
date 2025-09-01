@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 // Interface para a resposta da API de registro
 interface RegisterResponse {
@@ -79,6 +79,12 @@ const RegisterPage: React.FC = () => {
             </button>
           </div>
         </form>
+        <p className="text-center text-sm text-gray-600 mt-4">
+          Já tem uma conta?{' '}
+          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+            Faça login
+          </Link>
+        </p>
       </div>
     </div>
   );

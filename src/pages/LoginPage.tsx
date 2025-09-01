@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 // Interface para a resposta da API de login
@@ -86,6 +86,12 @@ const LoginPage: React.FC = () => {
             </button>
           </div>
         </form>
+        <p className="text-center text-sm text-gray-600 mt-4">
+          Não tem uma conta?{' '}
+          <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            Registre-se
+          </Link>
+        </p>
       </div>
     </div>
   );
