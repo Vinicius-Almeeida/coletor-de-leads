@@ -28,33 +28,13 @@ app.use(
 );
 app.use(limiter);
 
-// Configuração de CORS mais robusta para produção e desenvolvimento
-const allowedOrigins = [
-  "https://coletor-de-leads-4nog.vercel.app", // URL do seu frontend em produção
-  "http://localhost:3000", // URL comum para desenvolvimento React
-  "http://localhost:5173", // URL comum para desenvolvimento Vite/React
-];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Permitir requisições sem 'origin' (ex: Postman) ou se a origem estiver na nossa lista.
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error("Não permitido pela política de CORS"));
-    }
-  },
+// Configuração CORS simplificada para resolver problemas de produção
+app.use(cors({
+  origin: "*",
   methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-  allowedHeaders: [
-    "Content-Type",
-    "Accept",
-    "Authorization",
-    "X-Requested-With",
-  ],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+  allowedHeaders: ["Content-Type", "Accept", "Authorization", "X-Requested-With"],
+  credentials: true
+}));
 
 app.use(express.json({ limit: "10mb" }));
 
