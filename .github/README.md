@@ -1,23 +1,28 @@
 # 🔄 CI/CD Pipeline - Coletor de Leads
 
-Este diretório contém os workflows de Integração Contínua (CI) e Entrega Contínua (CD) para o projeto Coletor de Leads.
+Este diretório contém os workflows de Integração Contínua (CI) e Entrega
+Contínua (CD) para o projeto Coletor de Leads.
 
 ## 📋 Workflows Disponíveis
 
 ### `ci.yml` - Pipeline de Integração Contínua
 
 **Disparado em:**
+
 - Push para branches `main` e `develop`
 - Pull Requests para branches `main` e `develop`
 
 **Executa:**
+
 1. **Backend Tests & Security Audit**
+
    - Instalação de dependências
    - Auditoria de segurança
    - Testes unitários
    - Testes de segurança
 
 2. **Frontend Build & Tests**
+
    - Build da aplicação React
    - Testes do frontend
    - Verificação de cobertura
@@ -32,7 +37,8 @@ Este diretório contém os workflows de Integração Contínua (CI) e Entrega Co
 
 ### Repository Secrets
 
-Para que o pipeline funcione corretamente, configure os seguintes secrets no GitHub:
+Para que o pipeline funcione corretamente, configure os seguintes secrets no
+GitHub:
 
 1. Acesse: `Settings > Secrets and variables > Actions`
 2. Adicione os seguintes secrets:
@@ -78,6 +84,7 @@ Para que o pipeline passe, é necessário:
 ### Bloqueio de Merge
 
 Se qualquer verificação falhar:
+
 - ❌ O merge será bloqueado
 - 📋 Os logs de erro estarão disponíveis
 - 🔧 Corrija os problemas e faça um novo push
@@ -85,6 +92,7 @@ Se qualquer verificação falhar:
 ## 📊 Status do Pipeline
 
 O status do pipeline pode ser visualizado em:
+
 - **Actions tab** do repositório GitHub
 - **Checks** na página do Pull Request
 - **Badge** no README principal (se configurado)
@@ -105,18 +113,19 @@ O status do pipeline pode ser visualizado em:
 
 ### Troubleshooting
 
-**Problema:** Pipeline falha com erro de dependências
-**Solução:** Execute `npm ci` localmente e verifique se há problemas
+**Problema:** Pipeline falha com erro de dependências **Solução:** Execute
+`npm ci` localmente e verifique se há problemas
 
-**Problema:** Testes falham no CI mas passam localmente
-**Solução:** Verifique as variáveis de ambiente e secrets
+**Problema:** Testes falham no CI mas passam localmente **Solução:** Verifique
+as variáveis de ambiente e secrets
 
-**Problema:** Build do frontend falha
-**Solução:** Verifique se todas as dependências estão instaladas
+**Problema:** Build do frontend falha **Solução:** Verifique se todas as
+dependências estão instaladas
 
 ## 📞 Suporte
 
 Para dúvidas sobre o pipeline CI/CD:
+
 1. Verifique os logs na aba Actions
 2. Consulte este README
 3. Abra uma issue no repositório
