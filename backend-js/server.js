@@ -60,6 +60,16 @@ app.use(
 
 app.use(express.json({ limit: "10mb" }));
 
+// Middleware para tratamento de JSON malformado
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+    return res.status(400).json({ 
+      error: "JSON malformado na requisição" 
+    });
+  }
+  next();
+});
+
 // Ativa as rotas de usuário (registro, login, etc.)
 app.use('/api/users', userRoutes);
 
@@ -662,6 +672,33 @@ app.get("/api/sync-db", async (req, res) => {
       details: error.message,
     });
   }
+});
+
+// Middleware de tratamento de erros global
+app.use((error, req, res, next) => {
+  // Log do erro completo para debug interno
+  console.error("❌ Erro interno do servidor:", {
+    message: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+
+  // Resposta padronizada para o cliente
+  res.status(500).json({
+    error: "Ocorreu um erro interno no servidor",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Middleware para rotas não encontradas
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: "Endpoint não encontrado",
+    path: req.originalUrl,
+    method: req.method
+  });
 });
 
 // Iniciar servidor

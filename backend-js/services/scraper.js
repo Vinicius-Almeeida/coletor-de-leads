@@ -1,6 +1,8 @@
 // const puppeteer = require("puppeteer"); // Temporariamente desabilitado para deploy
 const cheerio = require("cheerio");
 const axios = require("axios");
+const validator = require("validator");
+const { isValidUrl, isValidEmail, sanitizeInput } = require("../middleware/security");
 
 /**
  * Enriquece dados de uma empresa com scraping
@@ -9,6 +11,25 @@ const axios = require("axios");
  */
 async function enrichDataWithScraping(business) {
   const enrichedBusiness = { ...business };
+  
+  // Sanitizar dados de entrada
+  if (enrichedBusiness.site) {
+    enrichedBusiness.site = sanitizeInput(enrichedBusiness.site);
+    // Se a URL for maliciosa após sanitização, remover
+    if (!isValidUrl(enrichedBusiness.site)) {
+      enrichedBusiness.site = "";
+    }
+  }
+  if (enrichedBusiness.email) {
+    enrichedBusiness.email = sanitizeInput(enrichedBusiness.email);
+    // Se o email for inválido após sanitização, remover
+    if (!isValidEmail(enrichedBusiness.email)) {
+      enrichedBusiness.email = "";
+    }
+  }
+  if (enrichedBusiness.nome) {
+    enrichedBusiness.nome = sanitizeInput(enrichedBusiness.nome);
+  }
 
   try {
     // Se tem site, tentar fazer scraping
@@ -17,24 +38,24 @@ async function enrichDataWithScraping(business) {
 
       const scrapedData = await scrapeWebsite(business.site);
 
-      // Priorizar emails e WhatsApp
-      if (scrapedData.email) {
+      // Priorizar emails e WhatsApp com validação robusta
+      if (scrapedData.email && isValidEmail(scrapedData.email)) {
         enrichedBusiness.email = scrapedData.email;
         console.log(`✅ Email encontrado: ${scrapedData.email}`);
       }
-      if (scrapedData.whatsapp) {
+      if (scrapedData.whatsapp && isValidWhatsApp(scrapedData.whatsapp)) {
         enrichedBusiness.whatsapp = scrapedData.whatsapp;
         console.log(`✅ WhatsApp encontrado: ${scrapedData.whatsapp}`);
       }
 
-      // Outros dados
-      if (scrapedData.linkedin) {
+      // Outros dados com validação de URL
+      if (scrapedData.linkedin && isValidUrl(scrapedData.linkedin)) {
         enrichedBusiness.linkedin = scrapedData.linkedin;
       }
-      if (scrapedData.facebook) {
+      if (scrapedData.facebook && isValidUrl(scrapedData.facebook)) {
         enrichedBusiness.facebook = scrapedData.facebook;
       }
-      if (scrapedData.instagram) {
+      if (scrapedData.instagram && isValidUrl(scrapedData.instagram)) {
         enrichedBusiness.instagram = scrapedData.instagram;
       }
     }
@@ -42,7 +63,7 @@ async function enrichDataWithScraping(business) {
     // Tentar encontrar WhatsApp no telefone (prioridade)
     if (business.telefone && !enrichedBusiness.whatsapp) {
       const whatsappNumber = extractWhatsAppNumber(business.telefone);
-      if (whatsappNumber) {
+      if (whatsappNumber && isValidWhatsApp(whatsappNumber)) {
         enrichedBusiness.whatsapp = whatsappNumber;
         console.log(`✅ WhatsApp extraído do telefone: ${whatsappNumber}`);
       }
@@ -634,28 +655,22 @@ function extractWhatsAppNumber(text) {
   return "";
 }
 
-/**
- * Valida se uma URL é válida
- * @param {string} url - URL para validar
- * @returns {boolean} True se válida
- */
-function isValidUrl(url) {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
+
+
 
 /**
- * Valida se um email é válido
- * @param {string} email - Email para validar
+ * Valida se um número de WhatsApp é válido
+ * @param {string} whatsapp - Número do WhatsApp para validar
  * @returns {boolean} True se válido
  */
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+function isValidWhatsApp(whatsapp) {
+  if (!whatsapp || typeof whatsapp !== 'string') return false;
+  
+  // Remover caracteres não numéricos
+  const numbers = whatsapp.replace(/\D/g, '');
+  
+  // Verificar se é um número brasileiro válido
+  return numbers.length >= 10 && numbers.length <= 13;
 }
 
 module.exports = {

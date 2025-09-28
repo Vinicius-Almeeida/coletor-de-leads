@@ -20,6 +20,7 @@
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
+    "dompurify": "^3.2.7",
     "dotenv": "^16.6.1",
     "exceljs": "^4.4.0",
     "express": "^4.18.2",
@@ -27,10 +28,12 @@
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
     "hpp": "^0.2.3",
+    "jsdom": "^27.0.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.3",
     "puppeteer": "^24.17.1",
     "sequelize": "^6.37.7",
+    "validator": "^13.15.15",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
