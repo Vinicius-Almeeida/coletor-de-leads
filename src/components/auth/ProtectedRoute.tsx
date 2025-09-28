@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   // Se o token ainda está sendo carregado do localStorage, podemos mostrar um loader
   // Para simplificar, vamos assumir que se não há token, não está autenticado.
