@@ -2,7 +2,11 @@
 const cheerio = require("cheerio");
 const axios = require("axios");
 const validator = require("validator");
-const { isValidUrl, isValidEmail, sanitizeInput } = require("../middleware/security");
+const {
+  isValidUrl,
+  isValidEmail,
+  sanitizeInput,
+} = require("../middleware/security");
 
 /**
  * Enriquece dados de uma empresa com scraping
@@ -11,7 +15,7 @@ const { isValidUrl, isValidEmail, sanitizeInput } = require("../middleware/secur
  */
 async function enrichDataWithScraping(business) {
   const enrichedBusiness = { ...business };
-  
+
   // Sanitizar dados de entrada
   if (enrichedBusiness.site) {
     enrichedBusiness.site = sanitizeInput(enrichedBusiness.site);
@@ -655,20 +659,17 @@ function extractWhatsAppNumber(text) {
   return "";
 }
 
-
-
-
 /**
  * Valida se um número de WhatsApp é válido
  * @param {string} whatsapp - Número do WhatsApp para validar
  * @returns {boolean} True se válido
  */
 function isValidWhatsApp(whatsapp) {
-  if (!whatsapp || typeof whatsapp !== 'string') return false;
-  
+  if (!whatsapp || typeof whatsapp !== "string") return false;
+
   // Remover caracteres não numéricos
-  const numbers = whatsapp.replace(/\D/g, '');
-  
+  const numbers = whatsapp.replace(/\D/g, "");
+
   // Verificar se é um número brasileiro válido
   return numbers.length >= 10 && numbers.length <= 13;
 }

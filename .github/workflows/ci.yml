@@ -1,0 +1,199 @@
+# ===========================================
+# CI PIPELINE - COLETOR DE LEADS
+# ===========================================
+# 
+# Este workflow executa automaticamente:
+# - Auditoria de segurança
+# - Testes unitários e de segurança
+# - Verificação de dependências
+# 
+# Disparado em: push e pull requests para main
+
+name: CI Pipeline - Build & Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # ===========================================
+  # JOB: BACKEND - TESTES E AUDITORIA
+  # ===========================================
+  backend-tests:
+    name: Backend Tests & Security Audit
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: backend-js/package-lock.json
+
+      - name: 📦 Install backend dependencies
+        working-directory: ./backend-js
+        run: npm ci
+
+      - name: 🔍 Run security audit
+        working-directory: ./backend-js
+        run: npm run security:audit
+
+      - name: 🧪 Run backend tests
+        working-directory: ./backend-js
+        run: npm test
+        env:
+          # Variáveis de ambiente para testes
+          NODE_ENV: test
+          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
+          SESSION_SECRET_TEST: ${{ secrets.SESSION_SECRET_TEST }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET_TEST }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY_TEST }}
+
+      - name: 🧪 Run security tests
+        working-directory: ./backend-js
+        run: npm run test:security
+        env:
+          NODE_ENV: test
+          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
+          SESSION_SECRET_TEST: ${{ secrets.SESSION_SECRET_TEST }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET_TEST }}
+
+  # ===========================================
+  # JOB: FRONTEND - BUILD E TESTES
+  # ===========================================
+  frontend-build:
+    name: Frontend Build & Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📦 Install frontend dependencies
+        run: npm ci
+
+      - name: 🏗️ Build frontend
+        run: npm run build
+        env:
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL_TEST || 'http://localhost:3001' }}
+
+      - name: 🧪 Run frontend tests
+        run: npm test -- --coverage --watchAll=false
+        env:
+          CI: true
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL_TEST || 'http://localhost:3001' }}
+
+  # ===========================================
+  # JOB: VERIFICAÇÕES GERAIS
+  # ===========================================
+  general-checks:
+    name: General Security & Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Check for security vulnerabilities
+        run: npm audit --audit-level=moderate
+
+      - name: 📋 Check for outdated dependencies
+        run: npm outdated || true
+
+      - name: 🔍 Check for sensitive data in code
+        run: |
+          # Verificar se há chaves hardcoded
+          if grep -r "sk-[a-zA-Z0-9]" . --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ Possível chave de API hardcoded encontrada!"
+            exit 1
+          fi
+          
+          if grep -r "AIza[a-zA-Z0-9]" . --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ Possível chave do Google hardcoded encontrada!"
+            exit 1
+          fi
+          
+          if grep -r "password.*=" . --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ Possível senha hardcoded encontrada!"
+            exit 1
+          fi
+          
+          echo "✅ Nenhuma informação sensível encontrada no código"
+
+      - name: 📝 Check .env.example exists
+        run: |
+          if [ ! -f ".env.example" ]; then
+            echo "❌ Arquivo .env.example não encontrado!"
+            exit 1
+          fi
+          echo "✅ Arquivo .env.example encontrado"
+
+      - name: 🔒 Check .gitignore for .env
+        run: |
+          if ! grep -q "\.env" .gitignore; then
+            echo "❌ .env não está no .gitignore!"
+            exit 1
+          fi
+          echo "✅ .env está no .gitignore"
+
+  # ===========================================
+  # JOB: NOTIFICAÇÃO DE SUCESSO
+  # ===========================================
+  notify-success:
+    name: Notify Success
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build, general-checks]
+    if: success()
+
+    steps:
+      - name: ✅ All checks passed
+        run: |
+          echo "🎉 Todos os testes e verificações passaram com sucesso!"
+          echo "✅ Backend tests: PASSED"
+          echo "✅ Frontend build: PASSED" 
+          echo "✅ Security audit: PASSED"
+          echo "✅ General checks: PASSED"
+          echo ""
+          echo "🚀 O pipeline CI/CD está funcionando perfeitamente!"
+
+  # ===========================================
+  # JOB: NOTIFICAÇÃO DE FALHA
+  # ===========================================
+  notify-failure:
+    name: Notify Failure
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build, general-checks]
+    if: failure()
+
+    steps:
+      - name: ❌ Some checks failed
+        run: |
+          echo "❌ Alguns testes ou verificações falharam!"
+          echo "🔍 Verifique os logs acima para mais detalhes"
+          echo "🚫 O merge será bloqueado até que os problemas sejam corrigidos"

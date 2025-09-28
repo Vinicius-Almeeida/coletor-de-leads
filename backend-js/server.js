@@ -26,7 +26,7 @@ const { enrichDataWithScraping } = require("./services/scraper");
 const { generateExcelFile } = require("./services/excelGenerator");
 const Lead = require("./models/Lead");
 const { Op } = require("sequelize"); // Op (Operadores) é necessário para filtros avançados
-const userRoutes = require('./routes/userRoutes');
+const userRoutes = require("./routes/userRoutes");
 
 // Importa e inicializa a conexão com o banco de dados
 const sequelize = require("./db/connection");
@@ -62,16 +62,16 @@ app.use(express.json({ limit: "10mb" }));
 
 // Middleware para tratamento de JSON malformado
 app.use((error, req, res, next) => {
-  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
-    return res.status(400).json({ 
-      error: "JSON malformado na requisição" 
+  if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
+    return res.status(400).json({
+      error: "JSON malformado na requisição",
     });
   }
   next();
 });
 
 // Ativa as rotas de usuário (registro, login, etc.)
-app.use('/api/users', userRoutes);
+app.use("/api/users", userRoutes);
 
 // Headers CORS para todas as respostas
 app.use((req, res, next) => {
@@ -682,22 +682,22 @@ app.use((error, req, res, next) => {
     stack: error.stack,
     url: req.url,
     method: req.method,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   // Resposta padronizada para o cliente
   res.status(500).json({
     error: "Ocorreu um erro interno no servidor",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Middleware para rotas não encontradas
-app.use('*', (req, res) => {
+app.use("*", (req, res) => {
   res.status(404).json({
     error: "Endpoint não encontrado",
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
   });
 });
 
