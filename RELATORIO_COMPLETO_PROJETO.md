@@ -414,7 +414,7 @@ app.use(helmet({
 
 ```javascript
 // .env
-GOOGLE_PLACES_API_KEY=AIzaSyDZuvIx3XZxNhkzIWv6OjKmdrw6aDbm_Rk
+GOOGLE_PLACES_API_KEY=[SUA_CHAVE_AQUI]
 PORT=3001
 NODE_ENV=production
 ```
