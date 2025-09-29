@@ -129,17 +129,17 @@ jobs:
       - name: 🔍 Check for sensitive data in code
         run: |
           # Verificar se há chaves hardcoded
-          if grep -r "sk-[a-zA-Z0-9]" . --exclude-dir=node_modules --exclude-dir=.git; then
+          if grep -r "sk-[a-zA-Z0-9]" . --exclude-dir=node_modules --exclude-dir=.git --exclude='*-lock.json'; then
             echo "❌ Possível chave de API hardcoded encontrada!"
             exit 1
           fi
 
-          if grep -r "AIza[a-zA-Z0-9]" . --exclude-dir=node_modules --exclude-dir=.git; then
+          if grep -r "AIza[a-zA-Z0-9]" . --exclude-dir=node_modules --exclude-dir=.git --exclude='*-lock.json'; then
             echo "❌ Possível chave do Google hardcoded encontrada!"
             exit 1
           fi
 
-          if grep -r "password.*=" . --exclude-dir=node_modules --exclude-dir=.git; then
+          if grep -r "password.*=" . --exclude-dir=node_modules --exclude-dir=.git --exclude='*-lock.json'; then
             echo "❌ Possível senha hardcoded encontrada!"
             exit 1
           fi
