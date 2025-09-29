@@ -13,9 +13,9 @@ describe("API Health Tests", () => {
 
   test("Health endpoint should return 200", async () => {
     // Simula uma resposta de sucesso do axios
-    const mockedResponse = { 
-      status: 200, 
-      data: { status: "healthy" } 
+    const mockedResponse = {
+      status: 200,
+      data: { status: "healthy" },
     };
     axios.get.mockResolvedValue(mockedResponse);
 
@@ -29,9 +29,9 @@ describe("API Health Tests", () => {
 
   test("Test endpoint should return 200", async () => {
     // Simula uma resposta de sucesso do axios
-    const mockedResponse = { 
-      status: 200, 
-      data: { message: "Backend funcionando!" } 
+    const mockedResponse = {
+      status: 200,
+      data: { message: "Backend funcionando!" },
     };
     axios.get.mockResolvedValue(mockedResponse);
 
@@ -47,8 +47,8 @@ describe("API Health Tests", () => {
     const mockedError = {
       response: {
         status: 400,
-        data: { error: "Validation failed" }
-      }
+        data: { error: "Validation failed" },
+      },
     };
     axios.post.mockRejectedValue(mockedError);
 
@@ -61,9 +61,9 @@ describe("API Health Tests", () => {
       expect(error.response.status).toBe(400);
     }
 
-    expect(axios.post).toHaveBeenCalledWith(
-      `${BASE_URL}/api/search`,
-      { nicho: "", cidade: "" }
-    );
+    expect(axios.post).toHaveBeenCalledWith(`${BASE_URL}/api/search`, {
+      nicho: "",
+      cidade: "",
+    });
   });
 });

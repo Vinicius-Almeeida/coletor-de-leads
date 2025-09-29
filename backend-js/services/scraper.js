@@ -1,4 +1,4 @@
-// const puppeteer = require("puppeteer"); // Temporariamente desabilitado para deploy
+const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const axios = require("axios");
 const validator = require("validator");
@@ -96,7 +96,7 @@ async function enrichDataWithScraping(business) {
 }
 
 /**
- * Faz scraping de um website
+ * Faz scraping de um website usando Puppeteer
  * @param {string} url - URL do site
  * @returns {Object} Dados extraídos
  */
@@ -109,72 +109,89 @@ async function scrapeWebsite(url) {
     whatsapp: "",
   };
 
+  let browser = null;
   try {
-    // Primeiro tentar com axios (mais rápido)
-    const response = await axios.get(url, {
-      timeout: 2000, // Reduzido para 2 segundos
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
+    console.log(`🔍 Iniciando scraping com Puppeteer para: ${url}`);
+
+    // Lançar navegador Puppeteer
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--no-first-run",
+        "--no-zygote",
+        "--single-process",
+        "--disable-gpu"
+      ],
     });
 
-    const html = response.data;
-    const $ = cheerio.load(html);
+    const page = await browser.newPage();
+    
+    // Configurar user agent e viewport
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    );
+    await page.setViewport({ width: 1280, height: 720 });
 
-    // Extrair email
-    data.email = extractEmail($, html);
+    // Navegar para a página
+    await page.goto(url, { 
+      waitUntil: "networkidle2", 
+      timeout: 15000 
+    });
 
-    // Extrair redes sociais
-    data.linkedin = extractLinkedIn($, html);
-    data.facebook = extractFacebook($, html);
-    data.instagram = extractInstagram($, html);
+    // Extrair conteúdo da página
+    const pageData = await page.evaluate(() => {
+      const html = document.documentElement.outerHTML;
+      const text = document.body.innerText;
+      return { html, text };
+    });
 
-    // Extrair WhatsApp
-    data.whatsapp = extractWhatsApp($, html);
+    // Usar Cheerio para parsear o HTML
+    const $ = cheerio.load(pageData.html);
+
+    // Extrair dados
+    data.email = extractEmail($, pageData.html);
+    data.linkedin = extractLinkedIn($, pageData.html);
+    data.facebook = extractFacebook($, pageData.html);
+    data.instagram = extractInstagram($, pageData.html);
+    data.whatsapp = extractWhatsApp($, pageData.html);
+
+    console.log(`✅ Scraping concluído para: ${url}`);
+
   } catch (error) {
-    console.log(`⚠️ Erro com axios, tentando Puppeteer para: ${url}`);
-
-    // Temporariamente desabilitado Puppeteer para deploy
-    // Se axios falhar, tentar com Puppeteer
-    /*
+    console.error(`❌ Erro no scraping com Puppeteer para ${url}:`, error.message);
+    
+    // Fallback: tentar com axios se Puppeteer falhar
     try {
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      console.log(`🔄 Tentando fallback com axios para: ${url}`);
+      const response = await axios.get(url, {
+        timeout: 5000,
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
       });
 
-      const page = await browser.newPage();
-      await page.setUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-      );
-      await page.setViewport({ width: 1280, height: 720 });
+      const html = response.data;
+      const $ = cheerio.load(html);
 
-      await page.goto(url, { waitUntil: "networkidle2", timeout: 15000 });
+      data.email = extractEmail($, html);
+      data.linkedin = extractLinkedIn($, html);
+      data.facebook = extractFacebook($, html);
+      data.instagram = extractInstagram($, html);
+      data.whatsapp = extractWhatsApp($, html);
 
-      const pageData = await page.evaluate(() => {
-        const html = document.documentElement.outerHTML;
-        const text = document.body.innerText;
-
-        return { html, text };
-      });
-
-      const $ = cheerio.load(pageData.html);
-
-      // Extrair dados
-      data.email = extractEmail($, pageData.html);
-      data.linkedin = extractLinkedIn($, pageData.html);
-      data.facebook = extractFacebook($, pageData.html);
-      data.whatsapp = extractWhatsApp($, pageData.html);
-
-      await browser.close();
-    } catch (puppeteerError) {
-      console.error(
-        `❌ Erro com Puppeteer para ${url}:`,
-        puppeteerError.message
-      );
+      console.log(`✅ Fallback com axios bem-sucedido para: ${url}`);
+    } catch (axiosError) {
+      console.error(`❌ Erro também com axios para ${url}:`, axiosError.message);
     }
-    */
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 
   return data;
@@ -674,6 +691,74 @@ function isValidWhatsApp(whatsapp) {
   return numbers.length >= 10 && numbers.length <= 13;
 }
 
+/**
+ * Função simples de scraper para testes
+ * @param {string} url - URL para fazer scraping
+ * @returns {Object} Dados extraídos
+ */
+async function scraper(url) {
+  let browser = null;
+  try {
+    // Configuração robusta para ambiente de teste
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
+      ]
+    });
+    
+    const page = await browser.newPage();
+    
+    // Configurar timeout e user agent
+    await page.setDefaultTimeout(10000);
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    
+    // Navegar para a página com timeout
+    await page.goto(url, { 
+      waitUntil: 'domcontentloaded',
+      timeout: 10000 
+    });
+
+    // Aguardar um pouco para garantir que o conteúdo carregue
+    await page.waitForTimeout(1000);
+
+    const content = await page.content();
+    const $ = cheerio.load(content);
+    const pageTitle = $('title').text();
+
+    return { 
+      success: true, 
+      title: pageTitle, 
+      html: content 
+    };
+
+  } catch (error) {
+    console.error('Erro no scraper com Puppeteer:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error('Erro ao fechar browser:', closeError);
+      }
+    }
+  }
+}
+
 module.exports = {
   enrichDataWithScraping,
+  scraper,
 };
