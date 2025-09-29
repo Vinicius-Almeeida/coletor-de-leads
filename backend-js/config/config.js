@@ -1,4 +1,4 @@
-require("dotenv").config(); // Garante que variáveis de .env sejam carregadas localmente
+require('dotenv').config();
 
 module.exports = {
   development: {
@@ -6,19 +6,16 @@ module.exports = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     host: process.env.DB_HOST,
-    dialect: "postgres",
-  },
-  test: {
-    // ... configuração de teste, se houver
+    dialect: 'postgres'
   },
   production: {
-    use_env_variable: "DATABASE_URL", // Linha mais importante!
-    dialect: "postgres",
+    use_env_variable: 'DATABASE_URL',
+    dialect: 'postgres',
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false, // Necessário para muitas conexões de produção
-      },
-    },
-  },
+        rejectUnauthorized: false
+      }
+    }
+  }
 };
