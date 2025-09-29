@@ -1,18 +1,18 @@
 // prisma/scripts/createAdmin.ts
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import { PrismaClient } from "@prisma/client";
+import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Iniciando script de criação de admin...');
+  console.log("Iniciando script de criação de admin...");
 
   const email = process.argv[2];
   const password = process.argv[3];
 
   if (!email || !password) {
-    console.error('Erro: E-mail e senha são obrigatórios.');
-    console.log('Uso: npm run db:create-admin -- <email> <password>');
+    console.error("Erro: E-mail e senha são obrigatórios.");
+    console.log("Uso: npm run db:create-admin -- <email> <password>");
     return;
   }
 
@@ -31,8 +31,8 @@ async function main() {
     data: {
       email: email,
       password: hashedPassword,
-      role: 'ADMIN',
-      status: 'ACTIVE',
+      role: "ADMIN",
+      status: "ACTIVE",
     },
   });
 
@@ -44,10 +44,10 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error('Ocorreu um erro ao executar o script:', e);
+    console.error("Ocorreu um erro ao executar o script:", e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-    console.log('Script finalizado.');
+    console.log("Script finalizado.");
   });
