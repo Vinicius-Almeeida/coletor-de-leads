@@ -3,7 +3,7 @@
  */
 
 // Mock do Puppeteer para testes
-jest.mock('puppeteer', () => ({
+jest.mock("puppeteer", () => ({
   launch: jest.fn().mockResolvedValue({
     newPage: jest.fn().mockResolvedValue({
       setDefaultTimeout: jest.fn(),
@@ -16,10 +16,10 @@ jest.mock('puppeteer', () => ({
           <body><h1>Example Domain</h1></body>
         </html>
       `),
-      close: jest.fn()
+      close: jest.fn(),
     }),
-    close: jest.fn()
-  })
+    close: jest.fn(),
+  }),
 }));
 
 const { searchGooglePlaces } = require("../services/googlePlaces");
@@ -46,8 +46,8 @@ describe("Services Tests", () => {
 
   test("Scraper service should handle invalid URLs gracefully", async () => {
     // Mock para URL inválida
-    const puppeteer = require('puppeteer');
-    puppeteer.launch.mockRejectedValueOnce(new Error('Connection failed'));
+    const puppeteer = require("puppeteer");
+    puppeteer.launch.mockRejectedValueOnce(new Error("Connection failed"));
 
     const result = await scraper("https://invalid-url-that-does-not-exist.com");
     expect(result.success).toBe(false);
