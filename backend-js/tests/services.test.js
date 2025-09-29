@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 const { searchGooglePlaces } = require("../services/googlePlaces");
 const { enrichDataWithScraping } = require("../services/scraper");
 const { generateExcelFile } = require("../services/excelGenerator");
