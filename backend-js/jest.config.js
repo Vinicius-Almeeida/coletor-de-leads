@@ -1,14 +1,18 @@
+// backend-js/jest.config.js
 module.exports = {
-  testEnvironment: "node",
-  testMatch: ["**/tests/**/*.test.js"],
-  collectCoverageFrom: [
-    "services/**/*.js",
-    "server.js",
-    "!**/node_modules/**",
-    "!**/coverage/**",
-  ],
-  coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov", "html"],
-  setupFilesAfterEnv: ["<rootDir>/tests/setup.js"],
+  testEnvironment: 'jest-environment-jsdom',
+  testPathIgnorePatterns: ['tests/security.test.js'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   testTimeout: 30000,
+  detectOpenHandles: true,
+  forceExit: true,
+  collectCoverageFrom: [
+    'services/**/*.js',
+    'models/**/*.js',
+    'middleware/**/*.js',
+    '!**/node_modules/**',
+    '!**/coverage/**'
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html']
 };
