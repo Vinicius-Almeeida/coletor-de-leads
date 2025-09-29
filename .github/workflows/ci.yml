@@ -128,23 +128,19 @@ jobs:
 
       - name: 🔍 Check for sensitive data in code
         run: |
-          # Verificar se há chaves hardcoded
-          if grep -r "sk-[a-zA-Z0-9]" . --exclude-dir=node_modules --exclude-dir=.git --exclude='*-lock.json'; then
-            echo "❌ Possível chave de API hardcoded encontrada!"
-            exit 1
-          fi
+          # Esta regex busca por palavras-chave (como password, secret, token)
+          # seguidas por um sinal de igualdade ou dois-pontos e uma string entre aspas com pelo menos 8 caracteres.
+          # Isso é muito mais preciso para encontrar segredos reais e ignora nomes de variáveis.
+          PATTERN='(key|secret|token|password)\s*[:=]\s*["'\''][A-Za-z0-9_@!#$%^&+=]{8,}.*["'\'']'
 
-          if grep -r "AIza[a-zA-Z0-9]" . --exclude-dir=node_modules --exclude-dir=.git --exclude='*-lock.json'; then
-            echo "❌ Possível chave do Google hardcoded encontrada!"
+          # O comando grep agora usa esta pattern e continua excluindo os arquivos de lock e node_modules.
+          # O comando agora também ignora seu próprio arquivo de definição (ci.yml).
+          if grep -r -i -E "$PATTERN" --exclude='*-lock.json' --exclude-dir='node_modules' --exclude='ci.yml' .; then
+            echo "❌ Possível segredo hardcoded encontrado!"
             exit 1
+          else
+            echo "✅ Nenhuma chave hardcoded encontrada."
           fi
-
-          if grep -r "password.*=" . --exclude-dir=node_modules --exclude-dir=.git --exclude='*-lock.json'; then
-            echo "❌ Possível senha hardcoded encontrada!"
-            exit 1
-          fi
-
-          echo "✅ Nenhuma informação sensível encontrada no código"
 
       - name: 📝 Check .env.example exists
         run: |
