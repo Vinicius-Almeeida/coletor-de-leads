@@ -18,7 +18,7 @@
     "@googlemaps/google-maps-services-js": "^3.3.41",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
-    "cheerio": "^1.0.0-rc.12",
+    "cheerio": "1.0.0-rc.12",
     "cors": "^2.8.5",
     "dompurify": "^3.2.7",
     "dotenv": "^16.6.1",
