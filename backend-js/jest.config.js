@@ -1,7 +1,6 @@
 // backend-js/jest.config.js
 module.exports = {
   testEnvironment: "jest-environment-jsdom",
-  testPathIgnorePatterns: ["tests/security.test.js"],
   setupFilesAfterEnv: ["<rootDir>/tests/setup.js"],
   testTimeout: 30000,
   detectOpenHandles: true,
