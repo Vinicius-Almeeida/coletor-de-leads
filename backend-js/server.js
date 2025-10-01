@@ -27,6 +27,7 @@ const { generateExcelFile } = require("./services/excelGenerator");
 const Lead = require("./models/Lead");
 const { Op } = require("sequelize"); // Op (Operadores) é necessário para filtros avançados
 const userRoutes = require("./routes/userRoutes");
+const leadRoutes = require("./routes/leadRoutes");
 
 // Importa e inicializa a conexão com o banco de dados
 const sequelize = require("./db/connection");
@@ -72,6 +73,9 @@ app.use((error, req, res, next) => {
 
 // Ativa as rotas de usuário (registro, login, etc.)
 app.use("/api/users", userRoutes);
+
+// Ativa as rotas de leads (MVP - sem banco de dados)
+app.use("/api/v1/leads", leadRoutes);
 
 // Headers CORS para todas as respostas
 app.use((req, res, next) => {
@@ -701,8 +705,13 @@ app.use("*", (req, res) => {
   });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor backend rodando em: http://localhost:${PORT}`);
-  console.log(`📱 API Health: http://localhost:${PORT}/api/health`);
-});
+// Exportar app para testes
+module.exports = app;
+
+// Iniciar servidor apenas se este arquivo for executado diretamente
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor backend rodando em: http://localhost:${PORT}`);
+    console.log(`📱 API Health: http://localhost:${PORT}/api/health`);
+  });
+}
