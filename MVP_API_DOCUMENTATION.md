@@ -2,7 +2,9 @@
 
 ## Visão Geral
 
-Este MVP implementa um endpoint simplificado para scraping de leads sem persistência em banco de dados. O objetivo é fornecer uma API focada em receita que executa o scraping e retorna os dados diretamente.
+Este MVP implementa um endpoint simplificado para scraping de leads sem
+persistência em banco de dados. O objetivo é fornecer uma API focada em receita
+que executa o scraping e retorna os dados diretamente.
 
 ## Endpoint Principal
 
@@ -127,18 +129,21 @@ PORT=3001
 ### Instalação e Execução
 
 1. **Instalar dependências**:
+
    ```bash
    cd backend-js
    npm install
    ```
 
 2. **Configurar variáveis de ambiente**:
+
    ```bash
    cp env.example .env
    # Editar .env com suas chaves
    ```
 
 3. **Executar servidor**:
+
    ```bash
    node server.js
    ```
@@ -182,11 +187,13 @@ backend-js/
 ## Testes
 
 Execute os testes com:
+
 ```bash
 npm test
 ```
 
 Os testes cobrem:
+
 - Autenticação via X-API-Key
 - Validação de parâmetros
 - Tratamento de erros
@@ -194,4 +201,5 @@ Os testes cobrem:
 
 ## Branch de Desenvolvimento
 
-Este MVP foi desenvolvido na branch `mvp-receita` para isolamento do projeto principal.
+Este MVP foi desenvolvido na branch `mvp-receita` para isolamento do projeto
+principal.
